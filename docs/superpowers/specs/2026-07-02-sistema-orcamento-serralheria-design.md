@@ -107,7 +107,22 @@ total       = subtotal − desconto
 - **Seleção de condições de pagamento por faixa:** testes unitários
 - Fluxos de tela: verificação manual rodando o app (criar orçamento ponta a ponta, link público, RLS de admin vs vendedor)
 
-## 10. Fora de escopo (v1)
+## 10. Tabela de preços inicial (seed — dados da chefe, 2026-07-02)
+
+Carga inicial editável pelo admin. Bronze: **sempre +R$ 250** (valor da chefe substitui os ~R$ 500 mencionados antes pelo dono).
+
+| Produto | Preço base | Grupos de opções |
+|---|---|---|
+| Portão de Alumínio | R$ 650/m² | Abertura*: De Correr 0, Basculante **+R$ 2.000 fixo** · Social: Sem social 0, Social embutido **+R$ 50/m²** (650→700) · Cor*: Branco 0, Preto 0, Bronze **+R$ 250** |
+| Janela de Vidro Temperado | R$ 500/m² | Vidro*: Incolor/Fumê/Verde/Serigrafado 0 · Cor*: Branco 0, Preto 0, Bronze +R$ 250 |
+| Porta Blindex | R$ 550/m² | Vidro*: idem · Cor*: idem |
+| Box Blindex | R$ 500/m² | Altura*: Padrão 0, Até o teto **+R$ 50/m²** (500→550) · Formato: Reto 0, De Canto 0 · Vidro*: idem · Cor*: idem |
+| Janela Linha Suprema (persiana integrada) | **a definir** | criado inativo, sem preço; admin ativa quando receber o valor |
+| Motor para Portão (automatização) | R$ 1.800 fixo (exemplo) | — |
+
+(* = grupo obrigatório)
+
+## 11. Fora de escopo (v1)
 
 - Controle de estoque, ordem de serviço/produção, agenda de instalação
 - Relatórios financeiros e comissões

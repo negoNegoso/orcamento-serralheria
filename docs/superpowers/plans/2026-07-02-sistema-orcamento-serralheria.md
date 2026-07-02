@@ -819,9 +819,11 @@ create policy fotos_delete on storage.objects for delete to authenticated
   using (bucket_id = 'fotos' and is_admin());
 ```
 
-- [ ] **Step 5: Migration 0003 — seed de exemplo**
+- [ ] **Step 5: Migration 0003 — seed com preços reais**
 
-`supabase/migrations/0003_seed.sql` (valores EXEMPLO — admin ajusta na UI):
+Preços da chefe (2026-07-02): portão de correr 650/m²; social embutido 700/m² (= +50/m²); basculante +2.000 fixo; janela 500/m²; porta Blindex 550/m²; box padrão 500/m², até o teto 550/m² (= +50/m²); **Bronze sempre +250 fixo**. Linha Suprema sem preço ainda → inativa. Motor 1.800 é exemplo.
+
+`supabase/migrations/0003_seed.sql`:
 
 ```sql
 insert into company_settings (id, name, city, about_text, warranty_text)
@@ -832,9 +834,10 @@ on conflict (id) do update set
   name = excluded.name, city = excluded.city,
   about_text = excluded.about_text, warranty_text = excluded.warranty_text;
 
+-- Portão de Alumínio: 650/m²; basculante +2000 fixo; social embutido +50/m²; bronze +250
 with p as (
   insert into product_types (name, pricing_mode, price_per_m2, sort_order)
-  values ('Portão de Alumínio', 'm2', 950.00, 0) returning id
+  values ('Portão de Alumínio', 'm2', 650.00, 0) returning id
 ), g1 as (
   insert into option_groups (product_type_id, name, required, sort_order)
   select id, 'Abertura', true, 0 from p returning id
@@ -846,40 +849,94 @@ with p as (
   select id, 'Cor do Alumínio', true, 2 from p returning id
 ), o1 as (
   insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
-  select id, x.label, 'fixo', 0, x.ord from g1, (values ('De Correr', 0), ('Basculante', 1)) as x(label, ord)
+  select id, x.label, x.typ, x.val, x.ord from g1,
+    (values ('De Correr', 'fixo', 0.00, 0), ('Basculante', 'fixo', 2000.00, 1)) as x(label, typ, val, ord)
 ), o2 as (
   insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
-  select id, x.label, 'fixo', 0, x.ord from g2, (values ('Social Embutido', 0), ('Social Separado', 1)) as x(label, ord)
+  select id, x.label, x.typ, x.val, x.ord from g2,
+    (values ('Sem social', 'fixo', 0.00, 0), ('Social Embutido', 'por_m2', 50.00, 1)) as x(label, typ, val, ord)
 )
 insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
 select id, x.label, 'fixo', x.val, x.ord from g3,
-  (values ('Branco', 0.00, 0), ('Preto', 0.00, 1), ('Bronze Brilhante', 500.00, 2)) as x(label, val, ord);
+  (values ('Branco', 0.00, 0), ('Preto', 0.00, 1), ('Bronze', 250.00, 2)) as x(label, val, ord);
 
+-- Janela de Vidro Temperado: 500/m²
 with p as (
   insert into product_types (name, pricing_mode, price_per_m2, sort_order)
-  values ('Box / Portas e Janelas Blindex', 'm2', 380.00, 1) returning id
+  values ('Janela de Vidro Temperado', 'm2', 500.00, 1) returning id
 ), g1 as (
   insert into option_groups (product_type_id, name, required, sort_order)
   select id, 'Tipo de Vidro', true, 0 from p returning id
 ), g2 as (
   insert into option_groups (product_type_id, name, required, sort_order)
-  select id, 'Formato', false, 1 from p returning id
-), g3 as (
-  insert into option_groups (product_type_id, name, required, sort_order)
-  select id, 'Cor do Alumínio', true, 2 from p returning id
+  select id, 'Cor do Alumínio', true, 1 from p returning id
 ), o1 as (
   insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
   select id, x.label, 'fixo', 0, x.ord from g1,
     (values ('Incolor', 0), ('Fumê', 1), ('Verde', 2), ('Serigrafado', 3)) as x(label, ord)
+)
+insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
+select id, x.label, 'fixo', x.val, x.ord from g2,
+  (values ('Branco', 0.00, 0), ('Preto', 0.00, 1), ('Bronze', 250.00, 2)) as x(label, val, ord);
+
+-- Porta Blindex: 550/m²
+with p as (
+  insert into product_types (name, pricing_mode, price_per_m2, sort_order)
+  values ('Porta Blindex', 'm2', 550.00, 2) returning id
+), g1 as (
+  insert into option_groups (product_type_id, name, required, sort_order)
+  select id, 'Tipo de Vidro', true, 0 from p returning id
+), g2 as (
+  insert into option_groups (product_type_id, name, required, sort_order)
+  select id, 'Cor do Alumínio', true, 1 from p returning id
+), o1 as (
+  insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
+  select id, x.label, 'fixo', 0, x.ord from g1,
+    (values ('Incolor', 0), ('Fumê', 1), ('Verde', 2), ('Serigrafado', 3)) as x(label, ord)
+)
+insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
+select id, x.label, 'fixo', x.val, x.ord from g2,
+  (values ('Branco', 0.00, 0), ('Preto', 0.00, 1), ('Bronze', 250.00, 2)) as x(label, val, ord);
+
+-- Box Blindex: 500/m²; até o teto +50/m²; bronze +250
+with p as (
+  insert into product_types (name, pricing_mode, price_per_m2, sort_order)
+  values ('Box Blindex', 'm2', 500.00, 3) returning id
+), g1 as (
+  insert into option_groups (product_type_id, name, required, sort_order)
+  select id, 'Altura', true, 0 from p returning id
+), g2 as (
+  insert into option_groups (product_type_id, name, required, sort_order)
+  select id, 'Formato', false, 1 from p returning id
+), g3 as (
+  insert into option_groups (product_type_id, name, required, sort_order)
+  select id, 'Tipo de Vidro', true, 2 from p returning id
+), g4 as (
+  insert into option_groups (product_type_id, name, required, sort_order)
+  select id, 'Cor do Alumínio', true, 3 from p returning id
+), o1 as (
+  insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
+  select id, x.label, x.typ, x.val, x.ord from g1,
+    (values ('Padrão', 'fixo', 0.00, 0), ('Até o teto', 'por_m2', 50.00, 1)) as x(label, typ, val, ord)
 ), o2 as (
   insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
   select id, x.label, 'fixo', 0, x.ord from g2, (values ('Box Reto', 0), ('Box de Canto', 1)) as x(label, ord)
+), o3 as (
+  insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
+  select id, x.label, 'fixo', 0, x.ord from g3,
+    (values ('Incolor', 0), ('Fumê', 1), ('Verde', 2), ('Serigrafado', 3)) as x(label, ord)
 )
 insert into options (group_id, label, surcharge_type, surcharge_value, sort_order)
-select id, x.label, 'fixo', 0, x.ord from g3, (values ('Branco', 0), ('Preto', 1), ('Bronze', 2)) as x(label, ord);
+select id, x.label, 'fixo', x.val, x.ord from g4,
+  (values ('Branco', 0.00, 0), ('Preto', 0.00, 1), ('Bronze', 250.00, 2)) as x(label, val, ord);
 
+-- Linha Suprema: sem preço ainda — inativa até a chefe passar o valor
+insert into product_types (name, pricing_mode, price_per_m2, active, sort_order)
+values ('Janela Linha Suprema (persiana integrada)', 'm2', null, false, 4);
+
+-- Motor: valor EXEMPLO
 insert into product_types (name, pricing_mode, base_price, sort_order)
-values ('Motor para Portão (automatização)', 'fixo', 1800.00, 2);
+values ('Motor para Portão (automatização)', 'fixo', 1800.00, 5);
 
 insert into payment_conditions (description, min_total, max_total, sort_order) values
   ('50% de entrada + 50% na entrega', null, null, 0),
@@ -1534,7 +1591,7 @@ export default async function ProdutosPage() {
 
 - [ ] **Step 4: Verificar**
 
-`/admin/produtos`: seed aparece (3 produtos); criar produto teste, editar via página detalhe ainda 404 (Task 9) — editar aqui só via novo; excluir produto teste → some. Excluir NÃO pede confirmação ainda — adicionar `onSubmit` confirm no form de excluir? Server form não tem onSubmit; aceitável v1 (item recriável). 
+`/admin/produtos`: seed aparece (6 produtos, Linha Suprema marcada como inativa); criar produto teste, editar via página detalhe ainda 404 (Task 9) — editar aqui só via novo; excluir produto teste → some. Excluir NÃO pede confirmação ainda — adicionar `onSubmit` confirm no form de excluir? Server form não tem onSubmit; aceitável v1 (item recriável). 
 
 - [ ] **Step 5: Commit**
 
@@ -1826,7 +1883,7 @@ export default async function ProdutoDetalhe({ params }: { params: Promise<{ id:
 
 - [ ] **Step 5: Verificar**
 
-`/admin/produtos` → clicar "Portão de Alumínio": grupos do seed aparecem (Abertura, Social, Cor); editar valor do Bronze para 550 e salvar → persiste; adicionar modelo com foto → foto aparece; excluir opção teste. `npm run build` → OK.
+`/admin/produtos` → clicar "Portão de Alumínio": grupos do seed aparecem (Abertura com Basculante +2.000, Social com Embutido +50/m², Cor com Bronze +250); editar valor do Bronze para 300, salvar → persiste; voltar para 250; adicionar modelo com foto → foto aparece; excluir opção teste. `npm run build` → OK.
 
 - [ ] **Step 6: Commit**
 
@@ -2671,7 +2728,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
 
 - [ ] **Step 6: Verificar**
 
-`npm run test` → PASS. `npm run dev`: criar orçamento com Portão 2,00×2,10 Bronze + Box 1,20×1,90 Incolor; conferir subtotais na tela contra cálculo manual (portão: 4,2 m² × 950 + 500 = 4.490,00; box: 2,28 m² × 380 = 866,40; total 5.356,40); salvar → cai no detalhe; editar item, salvar de novo → atualiza. Verificar no banco (`execute_sql`): `select unit_total, line_total, selected_options from quote_items` → snapshots com optionId/labels.
+`npm run test` → PASS. `npm run dev`: criar orçamento com Portão 2,00×2,10 (De Correr, Sem social, Bronze) + Box 1,20×1,90 (Padrão, Reto, Incolor, Branco); conferir subtotais na tela contra cálculo manual (portão: 4,2 m² × 650 + 250 = 2.980,00; box: 2,28 m² × 500 = 1.140,00; total 4.120,00). Testar também Basculante (+2.000 → 4.980,00) e Social Embutido (+50/m²: 4,2 × 700 + 250 = 3.190,00 no correr). Salvar → cai no detalhe; editar item, salvar de novo → atualiza. Verificar no banco (`execute_sql`): `select unit_total, line_total, selected_options from quote_items` → snapshots com optionId/labels.
 
 - [ ] **Step 7: Commit**
 
@@ -2864,7 +2921,7 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
 
 - [ ] **Step 4: Verificar**
 
-Abrir apresentação do orçamento da Task 13: layout limpo, condições corretas para o total (5.356,40 → aparece "até 5x" e "10x", some "3x" e "12x"); Baixar PDF → diálogo de impressão sem nav/botões; WhatsApp abre wa.me com mensagem e status vira `enviado`.
+Abrir apresentação do orçamento da Task 13: layout limpo, condições corretas para o total (4.120,00 → aparece "até 3x" e "10x", some "até 5x" e "12x"); Baixar PDF → diálogo de impressão sem nav/botões; WhatsApp abre wa.me com mensagem e status vira `enviado`.
 
 - [ ] **Step 5: Commit**
 
