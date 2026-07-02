@@ -34,7 +34,7 @@ Equipe pequena: todos os usuários autenticados veem todos os orçamentos. Clien
 
 - **`company_settings`** (linha única): nome, logo, cidade, telefone/WhatsApp, texto de apresentação ("da fábrica direto para sua obra…"), texto de garantias (1 ano esquadrias, 2 anos motores), validade padrão do orçamento em dias
 - **`profiles`**: vinculado ao usuário do Supabase Auth; nome, papel (`admin` | `vendedor`), ativo
-- **`product_types`**: nome (ex: "Portão de Alumínio", "Box Blindex"), modo de preço (`m2` | `fixo`), preço por m² **ou** preço base fixo, ativo, ordem de exibição
+- **`product_types`**: nome (ex: "Portão de Alumínio", "Box Blindex"), modo de preço (`m2` | `fixo` | `manual`), preço por m² **ou** preço base fixo, ativo, ordem de exibição. Modo `manual` = produto sob consulta: a responsável orça e o vendedor digita o valor combinado no item (ex: Janela Linha Suprema com persiana integrada); medidas viram registro opcional
 - **`option_groups`**: pertence a um produto; nome (ex: "Cor do Alumínio", "Tipo de Vidro", "Abertura", "Social", "Formato do Box"), obrigatório (sim/não), ordem
 - **`options`**: pertence a um grupo; rótulo (ex: "Bronze Brilhante"), tipo de adicional (`fixo` em R$ | `por_m2` em R$/m²), valor do adicional (0 = não altera o preço, caso Branco/Preto), ordem, ativo
 - **`models`**: pertence a um produto; nome, foto (Supabase Storage), adicional fixo em R$ (padrão 0), ativo — galeria para o vendedor mostrar ao cliente
@@ -51,6 +51,7 @@ Equipe pequena: todos os usuários autenticados veem todos os orçamentos. Clien
 área        = largura × altura                     (produto por m²)
 base        = área × preço_m²                      (modo m²)
 base        = preço_fixo                           (modo fixo)
+base        = valor digitado pelo vendedor         (modo manual — orçado pela responsável)
 unitário    = base
             + Σ adicionais fixos das opções
             + Σ (adicionais por m² × área)
@@ -61,7 +62,7 @@ total       = subtotal − desconto
 ```
 
 - Valores em R$ com 2 casas decimais; arredondamento meio-para-cima por linha
-- Validações: largura e altura obrigatórias e > 0 quando modo m²; grupo obrigatório exige seleção; desconto ≤ subtotal; quantidade ≥ 1
+- Validações: largura e altura obrigatórias e > 0 quando modo m² (opcionais e só informativas no modo manual); valor obrigatório ≥ 0 quando modo manual; grupo obrigatório exige seleção; desconto ≤ subtotal; quantidade ≥ 1
 - Motor de cálculo é **função TypeScript pura** (sem banco, sem framework) — testável isoladamente
 
 ## 6. Telas e rotas
@@ -117,7 +118,7 @@ Carga inicial editável pelo admin. Bronze: **sempre +R$ 250** (valor da chefe s
 | Janela de Vidro Temperado | R$ 500/m² | Vidro*: Incolor/Fumê/Verde/Serigrafado 0 · Cor*: Branco 0, Preto 0, Bronze +R$ 250 |
 | Porta Blindex | R$ 550/m² | Vidro*: idem · Cor*: idem |
 | Box Blindex | R$ 500/m² | Altura*: Padrão 0, Até o teto **+R$ 50/m²** (500→550) · Formato: Reto 0, De Canto 0 · Vidro*: idem · Cor*: idem |
-| Janela Linha Suprema (persiana integrada) | **a definir** | criado inativo, sem preço; admin ativa quando receber o valor |
+| Janela Linha Suprema (persiana integrada) | **manual (sob consulta)** | a responsável orça caso a caso; vendedor digita o valor combinado no item |
 | Motor para Portão (automatização) | R$ 1.800 fixo (exemplo) | — |
 
 (* = grupo obrigatório)

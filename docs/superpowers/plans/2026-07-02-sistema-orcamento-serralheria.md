@@ -19,7 +19,7 @@
 - Anônimo **nunca** lê tabelas diretamente; página pública só via token com service role no servidor
 - Import alias `@/*` → `src/*`; testes colocalizados `src/**/*.test.ts`, ambiente node
 - Status de orçamento: `rascunho` | `enviado` | `aprovado` | `recusado`
-- Modos de preço: `m2` | `fixo`; adicionais de opção: `fixo` | `por_m2`; adicional `por_m2` em produto de preço fixo contribui R$ 0
+- Modos de preço: `m2` | `fixo` | `manual` (vendedor digita o valor — produto orçado pela responsável; medidas opcionais informativas); adicionais de opção: `fixo` | `por_m2`; adicional `por_m2` só multiplica área quando ela existe (produto fixo, ou manual sem medidas → contribui R$ 0)
 - Env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (nunca exposta ao cliente)
 - Classe CSS `no-print` esconde elementos na impressão (PDF = impressão do navegador)
 
@@ -94,13 +94,13 @@ git add -A && git commit -m "chore: scaffold Next.js + Tailwind + shadcn/ui + Vi
 **Interfaces:**
 - Consumes: —
 - Produces:
-  - `types.ts`: `PricingMode = 'm2'|'fixo'`, `SurchargeType = 'fixo'|'por_m2'`, `SelectedOption { optionId?: string; group: string; label: string; surchargeType: SurchargeType; surchargeValue: number }`, `ItemInput { pricingMode: PricingMode; pricePerM2?: number|null; basePrice?: number|null; widthM?: number|null; heightM?: number|null; qty: number; options: SelectedOption[]; modelSurcharge?: number }`, `ItemTotals { areaM2: number|null; unitBasePrice: number; unitTotal: number; lineTotal: number }`
+  - `types.ts`: `PricingMode = 'm2'|'fixo'|'manual'`, `SurchargeType = 'fixo'|'por_m2'`, `SelectedOption { optionId?: string; group: string; label: string; surchargeType: SurchargeType; surchargeValue: number }`, `ItemInput { pricingMode: PricingMode; pricePerM2?: number|null; basePrice?: number|null; manualPrice?: number|null; widthM?: number|null; heightM?: number|null; qty: number; options: SelectedOption[]; modelSurcharge?: number }`, `ItemTotals { areaM2: number|null; unitBasePrice: number; unitTotal: number; lineTotal: number }`
   - `calc.ts`: `class PricingError extends Error`, `round2(v: number): number`, `calcItem(input: ItemInput): ItemTotals`, `calcQuoteTotal(lineTotals: number[], discount?: number): { subtotal: number; total: number }`
 
 - [ ] **Step 1: Escrever `types.ts`**
 
 ```ts
-export type PricingMode = 'm2' | 'fixo'
+export type PricingMode = 'm2' | 'fixo' | 'manual'
 export type SurchargeType = 'fixo' | 'por_m2'
 
 export interface SelectedOption {
@@ -115,6 +115,8 @@ export interface ItemInput {
   pricingMode: PricingMode
   pricePerM2?: number | null
   basePrice?: number | null
+  /** modo manual: valor combinado, digitado pelo vendedor (produto orçado pela responsável) */
+  manualPrice?: number | null
   widthM?: number | null
   heightM?: number | null
   qty: number
@@ -198,6 +200,32 @@ describe('calcItem fixo', () => {
   })
 })
 
+describe('calcItem manual (sob consulta)', () => {
+  const manual = (over: Partial<ItemInput> = {}): ItemInput => ({
+    pricingMode: 'manual', manualPrice: 2500, qty: 1, options: [], ...over,
+  })
+  it('base = valor digitado', () => {
+    const r = calcItem(manual())
+    expect(r.unitBasePrice).toBe(2500)
+    expect(r.unitTotal).toBe(2500)
+    expect(r.areaM2).toBeNull()
+  })
+  it('medidas opcionais viram área informativa', () => {
+    const r = calcItem(manual({ widthM: 2, heightM: 1.5 }))
+    expect(r.areaM2).toBe(3)
+    expect(r.unitTotal).toBe(2500) // área não altera o valor
+  })
+  it('soma adicionais e quantidade normalmente', () => {
+    const r = calcItem(manual({ qty: 2, options: [{ group: 'Cor', label: 'Bronze', surchargeType: 'fixo', surchargeValue: 250 }] }))
+    expect(r.unitTotal).toBe(2750)
+    expect(r.lineTotal).toBe(5500)
+  })
+  it('rejeita valor ausente ou negativo', () => {
+    expect(() => calcItem(manual({ manualPrice: null }))).toThrow(PricingError)
+    expect(() => calcItem(manual({ manualPrice: -1 }))).toThrow(PricingError)
+  })
+})
+
 describe('calcQuoteTotal', () => {
   it('soma linhas e aplica desconto', () => {
     expect(calcQuoteTotal([300, 1260], 60)).toEqual({ subtotal: 1560, total: 1500 })
@@ -243,6 +271,15 @@ export function calcItem(input: ItemInput): ItemTotals {
     }
     areaM2 = round2(input.widthM * input.heightM)
     base = areaM2 * input.pricePerM2
+  } else if (input.pricingMode === 'manual') {
+    if (input.manualPrice == null || input.manualPrice < 0) {
+      throw new PricingError('Informe o valor do item (produto orçado pela responsável)')
+    }
+    // medidas opcionais, só registro — não alteram o valor
+    if (input.widthM && input.widthM > 0 && input.heightM && input.heightM > 0) {
+      areaM2 = round2(input.widthM * input.heightM)
+    }
+    base = input.manualPrice
   } else {
     if (input.basePrice == null || input.basePrice < 0) {
       throw new PricingError('Produto sem preço fixo configurado')
@@ -354,6 +391,10 @@ describe('parseDecimal', () => {
     expect(parseDecimal('2.75')).toBe(2.75)
     expect(parseDecimal('')).toBe(0)
   })
+  it('trata ponto de milhar do pt-BR', () => {
+    expect(parseDecimal('3.200,00')).toBe(3200)
+    expect(parseDecimal('1.234.567,89')).toBe(1234567.89)
+  })
 })
 ```
 
@@ -393,7 +434,11 @@ export function formatBRL(v: number): string {
 }
 
 export function parseDecimal(s: string): number {
-  const n = Number(String(s).trim().replace(/\./g, m => m).replace(',', '.'))
+  const t = String(s).trim()
+  if (!t) return 0
+  // pt-BR: quando há vírgula decimal, pontos são separador de milhar
+  const normalized = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t
+  const n = Number(normalized)
   return Number.isFinite(n) ? n : 0
 }
 ```
@@ -425,11 +470,11 @@ git add src/lib && git commit -m "feat: condições de pagamento por faixa e for
     OptionRow { id: string; label: string; surcharge_type: 'fixo'|'por_m2'; surcharge_value: number; sort_order: number; active: boolean }
     OptionGroupRow { id: string; name: string; required: boolean; sort_order: number; options: OptionRow[] }
     ModelRow { id: string; name: string; photo_url: string|null; surcharge: number; active: boolean; sort_order: number }
-    ProductConfig { id: string; name: string; pricing_mode: 'm2'|'fixo'; price_per_m2: number|null; base_price: number|null; active: boolean; sort_order: number; option_groups: OptionGroupRow[]; models: ModelRow[] }
+    ProductConfig { id: string; name: string; pricing_mode: 'm2'|'fixo'|'manual'; price_per_m2: number|null; base_price: number|null; active: boolean; sort_order: number; option_groups: OptionGroupRow[]; models: ModelRow[] }
     ```
   - `snapshot.ts`:
     ```ts
-    ItemSelection { productTypeId: string; modelId: string|null; optionIds: string[]; widthM: number|null; heightM: number|null; qty: number }
+    ItemSelection { productTypeId: string; modelId: string|null; optionIds: string[]; widthM: number|null; heightM: number|null; manualPrice: number|null; qty: number }
     ItemSnapshot { product_type_id: string; product_name: string; model_id: string|null; model_name: string|null; model_photo_url: string|null; width_m: number|null; height_m: number|null; area_m2: number|null; qty: number; unit_base_price: number; selected_options: SelectedOption[]; unit_total: number; line_total: number }
     buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemSnapshot  // lança PricingError
     ```
@@ -453,7 +498,7 @@ export interface ModelRow {
 }
 export interface ProductConfig {
   id: string; name: string
-  pricing_mode: 'm2' | 'fixo'
+  pricing_mode: 'm2' | 'fixo' | 'manual'
   price_per_m2: number | null
   base_price: number | null
   active: boolean; sort_order: number
@@ -487,7 +532,7 @@ const portao: ProductConfig = {
 
 const sel = (over: Partial<ItemSelection> = {}): ItemSelection => ({
   productTypeId: 'p1', modelId: null, optionIds: ['o1'],
-  widthM: 2, heightM: 1.5, qty: 1, ...over,
+  widthM: 2, heightM: 1.5, manualPrice: null, qty: 1, ...over,
 })
 
 describe('buildSnapshot', () => {
@@ -516,6 +561,20 @@ describe('buildSnapshot', () => {
   it('rejeita produto errado', () => {
     expect(() => buildSnapshot(portao, sel({ productTypeId: 'outro' }))).toThrow(PricingError)
   })
+  it('produto manual usa valor digitado e guarda medidas informativas', () => {
+    const suprema: ProductConfig = {
+      id: 'p2', name: 'Janela Linha Suprema', pricing_mode: 'manual',
+      price_per_m2: null, base_price: null, active: true, sort_order: 0,
+      option_groups: [], models: [],
+    }
+    const s = buildSnapshot(suprema, sel({ productTypeId: 'p2', optionIds: [], manualPrice: 3200 }))
+    expect(s.unit_base_price).toBe(3200)
+    expect(s.line_total).toBe(3200)
+    expect(s.width_m).toBe(2)
+    expect(s.area_m2).toBe(3)
+    expect(() => buildSnapshot(suprema, sel({ productTypeId: 'p2', optionIds: [], manualPrice: null })))
+      .toThrow(PricingError)
+  })
 })
 ```
 
@@ -536,6 +595,8 @@ export interface ItemSelection {
   optionIds: string[]
   widthM: number | null
   heightM: number | null
+  /** valor combinado — só para produto de preço manual */
+  manualPrice: number | null
   qty: number
 }
 
@@ -582,6 +643,7 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     pricingMode: product.pricing_mode,
     pricePerM2: product.price_per_m2,
     basePrice: product.base_price,
+    manualPrice: sel.manualPrice,
     widthM: sel.widthM,
     heightM: sel.heightM,
     qty: sel.qty,
@@ -589,15 +651,15 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     modelSurcharge: model?.surcharge ?? 0,
   })
 
-  const isM2 = product.pricing_mode === 'm2'
+  const keepDims = product.pricing_mode !== 'fixo' // m2 obrigatório; manual opcional-informativo
   return {
     product_type_id: product.id,
     product_name: product.name,
     model_id: model?.id ?? null,
     model_name: model?.name ?? null,
     model_photo_url: model?.photo_url ?? null,
-    width_m: isM2 ? sel.widthM : null,
-    height_m: isM2 ? sel.heightM : null,
+    width_m: keepDims ? sel.widthM : null,
+    height_m: keepDims ? sel.heightM : null,
     area_m2: totals.areaM2,
     qty: sel.qty,
     unit_base_price: totals.unitBasePrice,
@@ -682,7 +744,8 @@ create table profiles (
 create table product_types (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  pricing_mode text not null check (pricing_mode in ('m2','fixo')),
+  -- manual = sob consulta: vendedor digita o valor combinado no item
+  pricing_mode text not null check (pricing_mode in ('m2','fixo','manual')),
   price_per_m2 numeric(10,2),
   base_price numeric(10,2),
   active boolean not null default true,
@@ -821,7 +884,7 @@ create policy fotos_delete on storage.objects for delete to authenticated
 
 - [ ] **Step 5: Migration 0003 — seed com preços reais**
 
-Preços da chefe (2026-07-02): portão de correr 650/m²; social embutido 700/m² (= +50/m²); basculante +2.000 fixo; janela 500/m²; porta Blindex 550/m²; box padrão 500/m², até o teto 550/m² (= +50/m²); **Bronze sempre +250 fixo**. Linha Suprema sem preço ainda → inativa. Motor 1.800 é exemplo.
+Preços da chefe (2026-07-02): portão de correr 650/m²; social embutido 700/m² (= +50/m²); basculante +2.000 fixo; janela 500/m²; porta Blindex 550/m²; box padrão 500/m², até o teto 550/m² (= +50/m²); **Bronze sempre +250 fixo**. Linha Suprema é sob consulta (modo `manual` — a responsável orça caso a caso). Motor 1.800 é exemplo.
 
 `supabase/migrations/0003_seed.sql`:
 
@@ -930,9 +993,9 @@ insert into options (group_id, label, surcharge_type, surcharge_value, sort_orde
 select id, x.label, 'fixo', x.val, x.ord from g4,
   (values ('Branco', 0.00, 0), ('Preto', 0.00, 1), ('Bronze', 250.00, 2)) as x(label, val, ord);
 
--- Linha Suprema: sem preço ainda — inativa até a chefe passar o valor
-insert into product_types (name, pricing_mode, price_per_m2, active, sort_order)
-values ('Janela Linha Suprema (persiana integrada)', 'm2', null, false, 4);
+-- Linha Suprema: sob consulta — a responsável orça, vendedor digita o valor no item
+insert into product_types (name, pricing_mode, sort_order)
+values ('Janela Linha Suprema (persiana integrada)', 'manual', 4);
 
 -- Motor: valor EXEMPLO
 insert into product_types (name, pricing_mode, base_price, sort_order)
@@ -1465,7 +1528,7 @@ import { parseDecimal } from '@/lib/format'
 export async function saveProduct(formData: FormData) {
   const { supabase } = await getProfile()
   const id = String(formData.get('id') ?? '')
-  const mode = String(formData.get('pricing_mode')) as 'm2' | 'fixo'
+  const mode = String(formData.get('pricing_mode')) as 'm2' | 'fixo' | 'manual'
   const row = {
     name: String(formData.get('name') ?? '').trim(),
     pricing_mode: mode,
@@ -1504,7 +1567,7 @@ import { Label } from '@/components/ui/label'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ProductForm({ product, action }: { product?: any; action: (fd: FormData) => Promise<void> }) {
-  const [mode, setMode] = useState<'m2' | 'fixo'>(product?.pricing_mode ?? 'm2')
+  const [mode, setMode] = useState<'m2' | 'fixo' | 'manual'>(product?.pricing_mode ?? 'm2')
   return (
     <form action={action} className="space-y-3 rounded border p-3">
       {product && <input type="hidden" name="id" value={product.id} />}
@@ -1514,24 +1577,31 @@ export function ProductForm({ product, action }: { product?: any; action: (fd: F
       </div>
       <div className="space-y-1">
         <Label>Modo de preço</Label>
-        <select name="pricing_mode" value={mode} onChange={e => setMode(e.target.value as 'm2' | 'fixo')}
+        <select name="pricing_mode" value={mode} onChange={e => setMode(e.target.value as 'm2' | 'fixo' | 'manual')}
           className="w-full rounded border bg-background p-2">
           <option value="m2">Por m² (largura × altura)</option>
           <option value="fixo">Preço fixo</option>
+          <option value="manual">Sob consulta (vendedor digita o valor no orçamento)</option>
         </select>
       </div>
-      {mode === 'm2' ? (
+      {mode === 'm2' && (
         <div className="space-y-1">
           <Label htmlFor={`ppm2-${product?.id ?? 'new'}`}>Preço por m² (R$)</Label>
           <Input id={`ppm2-${product?.id ?? 'new'}`} name="price_per_m2" inputMode="decimal"
             defaultValue={product?.price_per_m2 ?? ''} required />
         </div>
-      ) : (
+      )}
+      {mode === 'fixo' && (
         <div className="space-y-1">
           <Label htmlFor={`bp-${product?.id ?? 'new'}`}>Preço fixo (R$)</Label>
           <Input id={`bp-${product?.id ?? 'new'}`} name="base_price" inputMode="decimal"
             defaultValue={product?.base_price ?? ''} required />
         </div>
+      )}
+      {mode === 'manual' && (
+        <p className="text-sm text-muted-foreground">
+          Sem preço tabelado: a responsável orça e o vendedor digita o valor combinado ao montar o orçamento.
+        </p>
       )}
       <div className="flex items-center gap-4">
         <label className="flex items-center gap-2 text-sm">
@@ -1572,7 +1642,9 @@ export default async function ProdutosPage() {
             <div>
               <Link href={`/admin/produtos/${p.id}`} className="font-medium underline">{p.name}</Link>
               <p className="text-sm text-muted-foreground">
-                {p.pricing_mode === 'm2' ? `${formatBRL(p.price_per_m2 ?? 0)}/m²` : formatBRL(p.base_price ?? 0)}
+                {p.pricing_mode === 'm2' && `${formatBRL(p.price_per_m2 ?? 0)}/m²`}
+                {p.pricing_mode === 'fixo' && formatBRL(p.base_price ?? 0)}
+                {p.pricing_mode === 'manual' && 'Sob consulta'}
                 {!p.active && ' · inativo'}
               </p>
             </div>
@@ -1591,7 +1663,7 @@ export default async function ProdutosPage() {
 
 - [ ] **Step 4: Verificar**
 
-`/admin/produtos`: seed aparece (6 produtos, Linha Suprema marcada como inativa); criar produto teste, editar via página detalhe ainda 404 (Task 9) — editar aqui só via novo; excluir produto teste → some. Excluir NÃO pede confirmação ainda — adicionar `onSubmit` confirm no form de excluir? Server form não tem onSubmit; aceitável v1 (item recriável). 
+`/admin/produtos`: seed aparece (6 produtos, Linha Suprema mostrando "Sob consulta"); criar produto teste, editar via página detalhe ainda 404 (Task 9) — editar aqui só via novo; excluir produto teste → some. Excluir NÃO pede confirmação ainda — adicionar `onSubmit` confirm no form de excluir? Server form não tem onSubmit; aceitável v1 (item recriável). 
 
 - [ ] **Step 5: Commit**
 
@@ -2390,6 +2462,7 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
   const [modelId, setModelId] = useState<string | null>(initial?.modelId ?? null)
   const [width, setWidth] = useState(initial?.widthM?.toString() ?? '')
   const [height, setHeight] = useState(initial?.heightM?.toString() ?? '')
+  const [manualStr, setManualStr] = useState(initial?.manualPrice?.toString() ?? '')
   const [qty, setQty] = useState(initial?.qty ?? 1)
 
   const product = products.find(p => p.id === productId)
@@ -2400,8 +2473,9 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
     optionIds,
     widthM: width ? parseDecimal(width) : null,
     heightM: height ? parseDecimal(height) : null,
+    manualPrice: manualStr ? parseDecimal(manualStr) : null,
     qty,
-  }), [productId, modelId, optionIds, width, height, qty])
+  }), [productId, modelId, optionIds, width, height, manualStr, qty])
 
   const preview = useMemo(() => {
     if (!product) return { error: 'Escolha um produto' }
@@ -2426,16 +2500,23 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
         </select>
       </div>
 
-      {product.pricing_mode === 'm2' && (
+      {product.pricing_mode !== 'fixo' && (
         <div className="flex gap-2">
           <div className="space-y-1 flex-1">
-            <Label>Largura (m)</Label>
+            <Label>Largura (m){product.pricing_mode === 'manual' && ' — opcional'}</Label>
             <Input inputMode="decimal" value={width} onChange={e => setWidth(e.target.value)} placeholder="2,50" />
           </div>
           <div className="space-y-1 flex-1">
-            <Label>Altura (m)</Label>
+            <Label>Altura (m){product.pricing_mode === 'manual' && ' — opcional'}</Label>
             <Input inputMode="decimal" value={height} onChange={e => setHeight(e.target.value)} placeholder="2,10" />
           </div>
+        </div>
+      )}
+
+      {product.pricing_mode === 'manual' && (
+        <div className="space-y-1">
+          <Label>Valor combinado (R$) — orçado pela responsável</Label>
+          <Input inputMode="decimal" value={manualStr} onChange={e => setManualStr(e.target.value)} placeholder="3.200,00" />
         </div>
       )}
 
@@ -2694,6 +2775,8 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
       optionIds: (it.selected_options as any[]).map(o => o.optionId).filter(Boolean),
       widthM: it.width_m != null ? Number(it.width_m) : null,
       heightM: it.height_m != null ? Number(it.height_m) : null,
+      // usado só quando o produto é de preço manual (unit_base_price = valor digitado)
+      manualPrice: Number(it.unit_base_price),
       qty: it.qty,
     }))
 
@@ -2728,7 +2811,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
 
 - [ ] **Step 6: Verificar**
 
-`npm run test` → PASS. `npm run dev`: criar orçamento com Portão 2,00×2,10 (De Correr, Sem social, Bronze) + Box 1,20×1,90 (Padrão, Reto, Incolor, Branco); conferir subtotais na tela contra cálculo manual (portão: 4,2 m² × 650 + 250 = 2.980,00; box: 2,28 m² × 500 = 1.140,00; total 4.120,00). Testar também Basculante (+2.000 → 4.980,00) e Social Embutido (+50/m²: 4,2 × 700 + 250 = 3.190,00 no correr). Salvar → cai no detalhe; editar item, salvar de novo → atualiza. Verificar no banco (`execute_sql`): `select unit_total, line_total, selected_options from quote_items` → snapshots com optionId/labels.
+`npm run test` → PASS. `npm run dev`: criar orçamento com Portão 2,00×2,10 (De Correr, Sem social, Bronze) + Box 1,20×1,90 (Padrão, Reto, Incolor, Branco); conferir subtotais na tela contra cálculo manual (portão: 4,2 m² × 650 + 250 = 2.980,00; box: 2,28 m² × 500 = 1.140,00; total 4.120,00). Testar também Basculante (+2.000 → 4.980,00), Social Embutido (+50/m²: 4,2 × 700 + 250 = 3.190,00 no correr) e a Linha Suprema (sob consulta): adicionar item, digitar valor combinado 3.200,00 → entra no total como 3.200,00; sem valor → aviso e não deixa salvar. Salvar → cai no detalhe; editar item, salvar de novo → atualiza (inclusive o valor manual reaparece no campo). Verificar no banco (`execute_sql`): `select unit_total, line_total, selected_options from quote_items` → snapshots com optionId/labels.
 
 - [ ] **Step 7: Commit**
 
@@ -3049,4 +3132,4 @@ git tag v0.1.0
 
 - **Cobertura do spec:** empresa ✔ (T7), produtos/opções/modelos ✔ (T8-9), pagamento por faixa ✔ (T10, motor T3), usuários/papéis ✔ (T11, RLS T5), lista+status ✔ (T12), editor+cálculo+snapshot ✔ (T2/T4/T13), apresentação ✔ (T14), link público+WhatsApp+PDF ✔ (T14-15), validade ✔ (T13 valid_until), garantias/textos ✔ (seed+T7+T14), deploy ✔ (T16)
 - **Placeholders:** nenhum TBD; todo step com código completo
-- **Consistência de tipos:** `ItemSelection`/`ItemSnapshot`/`SelectedOption` (camelCase no jsonb `selected_options`) usados idênticos em T4/T13/T14; `ProductConfig.option_groups/models` casa com o select do Supabase; `subtotal` adicionado a `quotes` (T5) e usado em T13/T14
+- **Consistência de tipos:** `ItemSelection`/`ItemSnapshot`/`SelectedOption` (camelCase no jsonb `selected_options`) usados idênticos em T4/T13/T14; `ProductConfig.option_groups/models` casa com o select do Supabase; `subtotal` adicionado a `quotes` (T5) e usado em T13/T14; modo `manual` presente em `PricingMode` (T2), `ProductConfig` (T4), check do schema (T5), `ProductForm` (T8) e `ItemForm`/reconstrução (T13) — `ItemSelection.manualPrice` percorre editor → `buildSnapshot` → `unit_base_price`
