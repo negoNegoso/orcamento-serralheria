@@ -13,6 +13,13 @@ describe('round2', () => {
     expect(round2(2.344)).toBe(2.34)
     expect(round2(2.345)).toBe(2.35)
   })
+  it('fronteiras .xx5 em magnitudes reais de dinheiro (regressão float)', () => {
+    expect(round2(4.015)).toBe(4.02)
+    expect(round2(8.075)).toBe(8.08)
+    expect(round2(35.035)).toBe(35.04)
+    expect(round2(67.335)).toBe(67.34)
+    expect(round2(2730)).toBe(2730)
+  })
 })
 
 describe('calcItem por m²', () => {

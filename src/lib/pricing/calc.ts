@@ -3,7 +3,10 @@ import type { ItemInput, ItemTotals } from './types'
 export class PricingError extends Error {}
 
 export function round2(v: number): number {
-  return Math.round((v + Number.EPSILON) * 100) / 100
+  // deslocamento de expoente via string: evita erro de representação float
+  // (multiplicar por 100 antes de arredondar falha em fronteiras .xx5, ex: 35.035*100 = 3503.4999…)
+  const shifted = Math.round(Number(`${v}e2`))
+  return Number(`${shifted}e-2`)
 }
 
 export function calcItem(input: ItemInput): ItemTotals {
