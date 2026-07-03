@@ -150,6 +150,13 @@ describe('round2', () => {
     expect(round2(2.344)).toBe(2.34)
     expect(round2(2.345)).toBe(2.35)
   })
+  it('fronteiras .xx5 em magnitudes reais de dinheiro (regressão float)', () => {
+    expect(round2(4.015)).toBe(4.02)
+    expect(round2(8.075)).toBe(8.08)
+    expect(round2(35.035)).toBe(35.04)
+    expect(round2(67.335)).toBe(67.34)
+    expect(round2(2730)).toBe(2730)
+  })
 })
 
 describe('calcItem por m²', () => {
@@ -253,7 +260,10 @@ import type { ItemInput, ItemTotals } from './types'
 export class PricingError extends Error {}
 
 export function round2(v: number): number {
-  return Math.round((v + Number.EPSILON) * 100) / 100
+  // deslocamento de expoente via string: evita erro de representação float
+  // (multiplicar por 100 antes de arredondar falha em fronteiras .xx5, ex: 35.035*100 = 3503.4999…)
+  const shifted = Math.round(Number(`${v}e2`))
+  return Number(`${shifted}e-2`)
 }
 
 export function calcItem(input: ItemInput): ItemTotals {
