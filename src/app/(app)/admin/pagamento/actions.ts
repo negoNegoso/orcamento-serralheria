@@ -3,15 +3,22 @@ import { revalidatePath } from 'next/cache'
 import { getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
 
+// vazio → null (sem limite); não-numérico → erro (0 silencioso esconderia a condição de todos os orçamentos)
+function parseRange(s: FormDataEntryValue | null): number | null {
+  const t = String(s ?? '').trim()
+  if (!t) return null
+  const n = parseDecimal(t)
+  if (n === 0 && !/^0([.,]0*)?$/.test(t)) throw new Error(`Valor de faixa inválido: "${t}"`)
+  return n
+}
+
 export async function saveCondition(fd: FormData) {
   const { supabase } = await getProfile()
   const id = String(fd.get('id') ?? '')
-  const minS = String(fd.get('min_total') ?? '').trim()
-  const maxS = String(fd.get('max_total') ?? '').trim()
   const row = {
     description: String(fd.get('description') ?? '').trim(),
-    min_total: minS ? parseDecimal(minS) : null,
-    max_total: maxS ? parseDecimal(maxS) : null,
+    min_total: parseRange(fd.get('min_total')),
+    max_total: parseRange(fd.get('max_total')),
     sort_order: Number(fd.get('sort_order') ?? 0),
     active: fd.get('active') === 'on',
   }
