@@ -31,6 +31,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
   const [items, setItems] = useState<ItemSelection[]>(quote?.items ?? [])
   const [editing, setEditing] = useState<number | 'new' | null>(quote ? null : 'new')
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
   const computed = useMemo(() => {
@@ -59,8 +60,17 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
       items,
     })
     if ('error' in res) { setError(res.error); setSaving(false); return }
-    router.push(`/orcamentos/${res.id}`)
-    router.refresh()
+    if (quote?.id) {
+      // edição: já estamos em /orcamentos/[id] — push para a mesma rota não
+      // remonta o componente, então o estado precisa ser resetado aqui
+      setSaving(false)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+      router.refresh()
+    } else {
+      router.push(`/orcamentos/${res.id}`)
+      router.refresh()
+    }
   }
 
   return (
@@ -122,7 +132,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
         {computed.totalError && <p className="text-sm text-red-600">{computed.totalError}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
         <Button onClick={onSave} disabled={saving || !computed.allValid || !!computed.totalError || items.length === 0 || !customerName.trim()}>
-          {saving ? 'Salvando…' : 'Salvar orçamento'}
+          {saving ? 'Salvando…' : saved ? 'Salvo!' : 'Salvar orçamento'}
         </Button>
         <p className="text-xs text-muted-foreground">Ao salvar, os preços são recalculados pela tabela atual e congelados no orçamento.</p>
       </section>
