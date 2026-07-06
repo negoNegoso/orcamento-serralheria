@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import type { ProductConfig } from '@/lib/config-types'
 import { formatBRL, parseDecimal } from '@/lib/format'
 import { PricingError } from '@/lib/pricing/calc'
@@ -20,6 +21,8 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
   const [width, setWidth] = useState(initial?.widthM?.toString() ?? '')
   const [height, setHeight] = useState(initial?.heightM?.toString() ?? '')
   const [manualStr, setManualStr] = useState(initial?.manualPrice?.toString() ?? '')
+  const [extraStr, setExtraStr] = useState(initial?.extraValue?.toString() ?? '')
+  const [note, setNote] = useState(initial?.note ?? '')
   // string no estado: permite apagar/redigitar no teclado do celular;
   // campo vazio ou inválido conta como 1 só na hora do cálculo
   const [qtyStr, setQtyStr] = useState(String(initial?.qty ?? 1))
@@ -35,9 +38,9 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
     heightM: height ? parseDecimal(height) : null,
     manualPrice: manualStr ? parseDecimal(manualStr) : null,
     qty,
-    extraValue: null,
-    note: '',
-  }), [productId, modelId, optionIds, width, height, manualStr, qty])
+    extraValue: extraStr.trim() ? parseDecimal(extraStr) : null,
+    note,
+  }), [productId, modelId, optionIds, width, height, manualStr, qty, extraStr, note])
 
   const preview = useMemo((): { snap: ItemSnapshot } | { error: string } => {
     if (!product) return { error: 'Escolha um produto' }
@@ -134,6 +137,18 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
           <Button type="button" variant="outline" size="sm" className="h-10 w-10 text-lg"
             onClick={() => setQtyStr(String(qty + 1))} aria-label="Aumentar quantidade">+</Button>
         </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Ajuste do item (R$) — opcional, use − para abater</Label>
+        <Input inputMode="text" value={extraStr} onChange={e => setExtraStr(e.target.value)}
+          placeholder="ex: 150 ou -100" className="w-40" />
+      </div>
+
+      <div className="space-y-1">
+        <Label>Observação (aparece no orçamento)</Label>
+        <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)}
+          placeholder="ex: Instalação em até 15 dias" />
       </div>
 
       {'snap' in preview
