@@ -20,7 +20,10 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
   const [width, setWidth] = useState(initial?.widthM?.toString() ?? '')
   const [height, setHeight] = useState(initial?.heightM?.toString() ?? '')
   const [manualStr, setManualStr] = useState(initial?.manualPrice?.toString() ?? '')
-  const [qty, setQty] = useState(initial?.qty ?? 1)
+  // string no estado: permite apagar/redigitar no teclado do celular;
+  // campo vazio ou inválido conta como 1 só na hora do cálculo
+  const [qtyStr, setQtyStr] = useState(String(initial?.qty ?? 1))
+  const qty = Math.max(1, Math.trunc(Number(qtyStr)) || 1)
 
   const product = products.find(p => p.id === productId)
 
@@ -119,7 +122,16 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
 
       <div className="space-y-1">
         <Label>Quantidade</Label>
-        <Input type="number" min={1} value={qty} onChange={e => setQty(Math.max(1, Number(e.target.value)))} className="w-24" />
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" className="h-10 w-10 text-lg"
+            onClick={() => setQtyStr(String(Math.max(1, qty - 1)))} aria-label="Diminuir quantidade">−</Button>
+          <Input type="number" inputMode="numeric" min={1} value={qtyStr}
+            onChange={e => setQtyStr(e.target.value)}
+            onBlur={() => setQtyStr(String(qty))}
+            className="w-20 text-center" />
+          <Button type="button" variant="outline" size="sm" className="h-10 w-10 text-lg"
+            onClick={() => setQtyStr(String(qty + 1))} aria-label="Aumentar quantidade">+</Button>
+        </div>
       </div>
 
       {'snap' in preview
