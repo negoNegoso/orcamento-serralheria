@@ -1,9 +1,17 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
+import { createServerSupabase } from '@/lib/supabase/server'
 import { applicableConditions } from '@/lib/pricing/payment'
 import { QuotePresentation } from '@/components/presentation/quote-presentation'
 import { ShareBar } from '@/components/quote/share-bar'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createServerSupabase()
+  const { data } = await supabase.from('quotes').select('customer_name').eq('id', id).single()
+  return { title: data ? `Orçamento - ${data.customer_name}` : 'Orçamento' }
+}
 
 export default async function Apresentacao({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

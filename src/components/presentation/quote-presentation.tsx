@@ -39,6 +39,12 @@ export function QuotePresentation({ company, quote, items, conditions }: {
                 <p className="text-muted-foreground">{(it.selected_options as any[]).map(o => o.label).join(' · ')}</p>
               )}
               {it.qty > 1 && <p className="text-muted-foreground">Quantidade: {it.qty}</p>}
+              {Number(it.extra_value ?? 0) !== 0 && (
+                <p className="text-muted-foreground">
+                  Ajuste: {Number(it.extra_value) > 0 ? '+' : '−'}{formatBRL(Math.abs(Number(it.extra_value)))}
+                </p>
+              )}
+              {it.note && <p className="italic text-muted-foreground">{it.note}</p>}
             </div>
             <p className="shrink-0 font-semibold">{formatBRL(Number(it.line_total))}</p>
           </div>
