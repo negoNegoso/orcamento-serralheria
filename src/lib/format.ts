@@ -7,8 +7,16 @@ export function formatBRL(v: number): string {
 export function parseDecimal(s: string): number {
   const t = String(s).trim()
   if (!t) return 0
-  // pt-BR: quando há vírgula decimal, pontos são separador de milhar
-  const normalized = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t
+  let normalized: string
+  if (t.includes(',')) {
+    // pt-BR: com vírgula decimal, pontos são separador de milhar
+    normalized = t.replace(/\./g, '').replace(',', '.')
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(t)) {
+    // sem vírgula mas pontos agrupando exatamente 3 dígitos: milhar pt-BR ("3.200" = 3200)
+    normalized = t.replace(/\./g, '')
+  } else {
+    normalized = t
+  }
   const n = Number(normalized)
   return Number.isFinite(n) ? n : 0
 }
