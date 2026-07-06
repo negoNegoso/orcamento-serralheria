@@ -19,6 +19,8 @@ export interface ExistingQuote {
   discount: number
   status: string
   token: string
+  /** total congelado no último salvamento — base do aviso de divergência */
+  savedTotal: number
   items: ItemSelection[]
 }
 
@@ -129,6 +131,12 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
         </div>
         <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(computed.totals.subtotal)}</p>
         <p className="text-lg font-bold">Total: {formatBRL(computed.totals.total)}</p>
+        {quote && !saved && computed.allValid && computed.totals.total !== quote.savedTotal && (
+          <p className="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-800">
+            O total salvo era {formatBRL(quote.savedTotal)} — recalculado pela tabela atual dá{' '}
+            {formatBRL(computed.totals.total)}. Salvar grava os novos valores.
+          </p>
+        )}
         {computed.totalError && <p className="text-sm text-red-600">{computed.totalError}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
         <Button onClick={onSave} disabled={saving || !computed.allValid || !!computed.totalError || items.length === 0 || !customerName.trim()}>

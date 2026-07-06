@@ -18,4 +18,15 @@ describe('parseDecimal', () => {
     expect(parseDecimal('3.200,00')).toBe(3200)
     expect(parseDecimal('1.234.567,89')).toBe(1234567.89)
   })
+  it('ponto agrupando 3 dígitos sem vírgula é milhar', () => {
+    expect(parseDecimal('3.200')).toBe(3200)
+    expect(parseDecimal('1.234')).toBe(1234)
+    expect(parseDecimal('12.345')).toBe(12345)
+    expect(parseDecimal('1.234.567')).toBe(1234567)
+  })
+  it('ponto com 1-2 dígitos finais sem vírgula segue decimal', () => {
+    expect(parseDecimal('2.75')).toBe(2.75)
+    expect(parseDecimal('1.5')).toBe(1.5)
+    expect(parseDecimal('0.99')).toBe(0.99)
+  })
 })

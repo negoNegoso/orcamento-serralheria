@@ -39,12 +39,7 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
     }
 
     let quoteId = input.id
-    if (quoteId) {
-      const { error } = await supabase.from('quotes').update(quoteRow).eq('id', quoteId)
-      if (error) throw new Error(error.message)
-      const { error: dErr } = await supabase.from('quote_items').delete().eq('quote_id', quoteId)
-      if (dErr) throw new Error(dErr.message)
-    } else {
+    if (!quoteId) {
       const { data: settings } = await supabase.from('company_settings')
         .select('default_validity_days').eq('id', 1).single()
       const days = settings?.default_validity_days ?? 15
@@ -56,9 +51,13 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
       quoteId = data.id as string
     }
 
-    const rows = snapshots.map((s, i) => ({ ...s, quote_id: quoteId, sort_order: i }))
-    const { error: iErr } = await supabase.from('quote_items').insert(rows)
-    if (iErr) throw new Error(iErr.message)
+    // cabeçalho + troca de itens numa transação só (rollback total em falha)
+    const { error: rpcErr } = await supabase.rpc('save_quote_atomic', {
+      p_quote_id: quoteId,
+      p_quote: quoteRow,
+      p_items: snapshots,
+    })
+    if (rpcErr) throw new Error(rpcErr.message)
 
     revalidatePath('/')
     revalidatePath(`/orcamentos/${quoteId}`)
