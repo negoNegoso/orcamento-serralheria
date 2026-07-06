@@ -44,11 +44,15 @@ export function calcItem(input: ItemInput): ItemTotals {
     unit += opt.surchargeType === 'por_m2' ? opt.surchargeValue * (areaM2 ?? 0) : opt.surchargeValue
   }
   const unitTotal = round2(unit)
+  const lineTotal = round2(unitTotal * input.qty + (input.extraValue ?? 0))
+  if (lineTotal < 0) {
+    throw new PricingError('Ajuste deixa o item com valor negativo')
+  }
   return {
     areaM2,
     unitBasePrice: round2(base),
     unitTotal,
-    lineTotal: round2(unitTotal * input.qty),
+    lineTotal,
   }
 }
 

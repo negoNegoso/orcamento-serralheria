@@ -11,6 +11,10 @@ export interface ItemSelection {
   /** valor combinado — só para produto de preço manual */
   manualPrice: number | null
   qty: number
+  /** ajuste livre em R$ aplicado uma vez na linha (positivo ou negativo) */
+  extraValue: number | null
+  /** observação do item, visível ao cliente */
+  note: string
 }
 
 export interface ItemSnapshot {
@@ -27,6 +31,8 @@ export interface ItemSnapshot {
   selected_options: SelectedOption[]
   unit_total: number
   line_total: number
+  extra_value: number
+  note: string
 }
 
 export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemSnapshot {
@@ -69,6 +75,7 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     qty: sel.qty,
     options: selected,
     modelSurcharge: model?.surcharge ?? 0,
+    extraValue: sel.extraValue,
   })
 
   const keepDims = product.pricing_mode !== 'fixo' // m2 obrigatório; manual opcional-informativo
@@ -86,5 +93,7 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     selected_options: selected,
     unit_total: totals.unitTotal,
     line_total: totals.lineTotal,
+    extra_value: sel.extraValue ?? 0,
+    note: sel.note.trim(),
   }
 }

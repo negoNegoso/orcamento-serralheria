@@ -45,6 +45,8 @@ const sel = (over: Partial<ItemSelection> = {}): ItemSelection => ({
   heightM: 1.5,
   manualPrice: null,
   qty: 1,
+  extraValue: null,
+  note: '',
   ...over,
 })
 
@@ -93,5 +95,16 @@ describe('buildSnapshot', () => {
     expect(s.area_m2).toBe(3)
     expect(() => buildSnapshot(suprema, sel({ productTypeId: 'p2', optionIds: [], manualPrice: null })))
       .toThrow(PricingError)
+  })
+  it('congela ajuste e observação no snapshot', () => {
+    const s = buildSnapshot(portao, sel({ optionIds: ['o1'], extraValue: -50, note: 'Instalação em 15 dias' }))
+    expect(s.extra_value).toBe(-50)
+    expect(s.note).toBe('Instalação em 15 dias')
+    expect(s.line_total).toBe(250) // 300 − 50
+  })
+  it('sem ajuste/observação: defaults 0 e vazio', () => {
+    const s = buildSnapshot(portao, sel())
+    expect(s.extra_value).toBe(0)
+    expect(s.note).toBe('')
   })
 })

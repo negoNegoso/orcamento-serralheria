@@ -96,6 +96,28 @@ describe('calcItem manual (sob consulta)', () => {
   })
 })
 
+describe('calcItem extraValue (ajuste do item)', () => {
+  it('ajuste positivo soma uma vez na linha, não no unitário', () => {
+    const r = calcItem(m2Item({ qty: 2, extraValue: 100 }))
+    expect(r.unitTotal).toBe(300)
+    expect(r.lineTotal).toBe(700) // 300×2 + 100
+  })
+  it('ajuste negativo abate da linha', () => {
+    expect(calcItem(m2Item({ extraValue: -50 })).lineTotal).toBe(250)
+  })
+  it('ajuste ausente ou zero não muda nada', () => {
+    expect(calcItem(m2Item({})).lineTotal).toBe(300)
+    expect(calcItem(m2Item({ extraValue: 0 })).lineTotal).toBe(300)
+    expect(calcItem(m2Item({ extraValue: null })).lineTotal).toBe(300)
+  })
+  it('rejeita ajuste que deixa a linha negativa', () => {
+    expect(() => calcItem(m2Item({ extraValue: -301 }))).toThrow(PricingError)
+  })
+  it('linha zerada por ajuste é permitida', () => {
+    expect(calcItem(m2Item({ extraValue: -300 })).lineTotal).toBe(0)
+  })
+})
+
 describe('calcQuoteTotal', () => {
   it('soma linhas e aplica desconto', () => {
     expect(calcQuoteTotal([300, 1260], 60)).toEqual({ subtotal: 1560, total: 1500 })
