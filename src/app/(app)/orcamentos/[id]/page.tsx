@@ -36,7 +36,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
   const existing: ExistingQuote = {
     id: quote.id, customer_name: quote.customer_name, customer_phone: quote.customer_phone,
     site_address: quote.site_address, discount: Number(quote.discount), status: quote.status,
-    token: quote.token, items,
+    token: quote.token, savedTotal: Number(quote.total), items,
   }
 
   return (
