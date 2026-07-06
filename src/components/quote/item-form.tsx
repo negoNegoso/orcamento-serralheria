@@ -35,6 +35,8 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
     heightM: height ? parseDecimal(height) : null,
     manualPrice: manualStr ? parseDecimal(manualStr) : null,
     qty,
+    extraValue: null,
+    note: '',
   }), [productId, modelId, optionIds, width, height, manualStr, qty])
 
   const preview = useMemo((): { snap: ItemSnapshot } | { error: string } => {

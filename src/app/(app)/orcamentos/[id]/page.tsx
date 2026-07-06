@@ -31,6 +31,8 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
       // usado só quando o produto é de preço manual (unit_base_price = valor digitado)
       manualPrice: Number(it.unit_base_price),
       qty: it.qty,
+      extraValue: null,
+      note: '',
     }))
 
   const existing: ExistingQuote = {
