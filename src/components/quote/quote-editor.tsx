@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import type { ProductConfig } from '@/lib/config-types'
 import { formatBRL, parseDecimal } from '@/lib/format'
 import { PricingError, calcQuoteTotal } from '@/lib/pricing/calc'
+import { quoteDisplayFooter, itemDisplayGross } from '@/lib/pricing/display'
 import { buildSnapshot, type ItemSelection, type ItemSnapshot } from '@/lib/pricing/snapshot'
 import { saveQuote } from '@/app/(app)/orcamentos/actions'
 import { ItemForm } from './item-form'
@@ -50,7 +51,8 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
     let totalError = ''
     try { totals = calcQuoteTotal(valid.map(s => s.line_total), discount) }
     catch (e) { totalError = e instanceof PricingError ? e.message : 'Erro' }
-    return { snaps, totals, totalError, allValid: valid.length === items.length }
+    const footer = quoteDisplayFooter(totals.subtotal, discount, valid.map(s => s.extra_value))
+    return { snaps, totals, footer, totalError, allValid: valid.length === items.length }
   }, [items, products, discountStr])
 
   async function onSave() {
@@ -107,9 +109,9 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
                       {s.selected_options.map(o => o.label).join(', ')}
                       {s.qty > 1 && ` · ${s.qty}un`}
                     </p>
-                    <p className="font-semibold">{formatBRL(s.line_total)}</p>
+                    <p className="font-semibold">{formatBRL(itemDisplayGross(s.line_total, s.extra_value))}</p>
                     {s.extra_value !== 0 && (
-                      <p className="text-muted-foreground">
+                      <p className={s.extra_value < 0 ? 'text-green-700' : 'text-muted-foreground'}>
                         Ajuste: {s.extra_value > 0 ? '+' : '−'}{formatBRL(Math.abs(s.extra_value))}
                       </p>
                     )}
@@ -135,7 +137,10 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
           <Label className="shrink-0">Desconto (R$)</Label>
           <Input inputMode="decimal" value={discountStr} onChange={e => setDiscountStr(e.target.value)} className="w-28" />
         </div>
-        <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(computed.totals.subtotal)}</p>
+        {computed.footer.hasDeduction && (
+          <p className="text-sm text-green-700">Desconto: −{formatBRL(computed.footer.discount)}</p>
+        )}
+        <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(computed.footer.subtotal)}</p>
         <p className="text-lg font-bold">Total: {formatBRL(computed.totals.total)}</p>
         {quote && !saved && computed.allValid && computed.totals.total !== quote.savedTotal && (
           <p className="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-800">
