@@ -11,8 +11,8 @@ export function parseDecimal(s: string): number {
   if (t.includes(',')) {
     // pt-BR: com vírgula decimal, pontos são separador de milhar
     normalized = t.replace(/\./g, '').replace(',', '.')
-  } else if (/^\d{1,3}(\.\d{3})+$/.test(t)) {
-    // sem vírgula mas pontos agrupando exatamente 3 dígitos: milhar pt-BR ("3.200" = 3200)
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) {
+    // sem vírgula mas pontos agrupando exatamente 3 dígitos: milhar pt-BR ("3.200" = 3200, "-1.200" = -1200)
     normalized = t.replace(/\./g, '')
   } else {
     normalized = t

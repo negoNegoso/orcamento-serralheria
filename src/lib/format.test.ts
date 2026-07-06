@@ -29,4 +29,10 @@ describe('parseDecimal', () => {
     expect(parseDecimal('1.5')).toBe(1.5)
     expect(parseDecimal('0.99')).toBe(0.99)
   })
+  it('aceita valores negativos (ajuste de item)', () => {
+    expect(parseDecimal('-100')).toBe(-100)
+    expect(parseDecimal('-100,50')).toBe(-100.5)
+    expect(parseDecimal('-1.200')).toBe(-1200)
+    expect(parseDecimal('-1.200,50')).toBe(-1200.5)
+  })
 })
