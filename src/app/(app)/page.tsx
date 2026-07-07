@@ -12,7 +12,7 @@ export default async function Home({ searchParams }: {
 }) {
   const { q = '', status = '' } = await searchParams
   const { supabase } = await getProfile()
-  let query = supabase.from('quotes').select('*').order('created_at', { ascending: false }).limit(100)
+  let query = supabase.from('quotes').select('*, creator:created_by(name)').order('created_at', { ascending: false }).limit(100)
   if (q) query = query.ilike('customer_name', `%${q}%`)
   if (status) query = query.eq('status', status)
   const { data: quotes } = await query
@@ -31,13 +31,15 @@ export default async function Home({ searchParams }: {
         <Button variant="outline" type="submit">Filtrar</Button>
       </form>
       <ul className="space-y-2">
-        {(quotes ?? []).map(qt => (
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {(quotes ?? []).map((qt: any) => (
           <li key={qt.id}>
             <Link href={`/orcamentos/${qt.id}`} className="flex items-center justify-between rounded border p-3">
               <div>
                 <p className="font-medium">{qt.customer_name}</p>
                 <p className="text-sm text-muted-foreground">
                   {new Date(qt.created_at).toLocaleDateString('pt-BR')} · {formatBRL(qt.total)}
+                  {' · '}Vendedor: {qt.creator?.name ?? 'Sem vendedor'}
                 </p>
               </div>
               <StatusBadge status={qt.status} />

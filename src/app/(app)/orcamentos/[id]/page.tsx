@@ -2,8 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 import { fetchProductConfigs } from '@/lib/queries'
+import { canReassignOwner } from '@/lib/quotes/ownership'
 import { QuoteEditor, type ExistingQuote } from '@/components/quote/quote-editor'
 import { StatusBadge } from '@/components/quote/status-badge'
+import { OwnerSelect } from '@/components/quote/owner-select'
 import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { setStatus } from '../actions'
@@ -11,12 +13,19 @@ import type { ItemSelection } from '@/lib/pricing/snapshot'
 
 export default async function OrcamentoDetalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { supabase } = await getProfile()
-  const [{ data: quote }, products] = await Promise.all([
-    supabase.from('quotes').select('*, quote_items(*)').eq('id', id).single(),
+  const { supabase, user, profile } = await getProfile()
+  const [{ data: quote }, products, { data: activeUsers }] = await Promise.all([
+    supabase.from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('id', id).single(),
     fetchProductConfigs(supabase),
+    supabase.from('profiles').select('id, name').eq('active', true).order('name'),
   ])
   if (!quote) notFound()
+
+  const canReassign = canReassignOwner({
+    role: profile.role,
+    userId: user.id,
+    quoteOwnerId: quote.created_by,
+  })
 
   // reconstrói seleções a partir dos snapshots (ids salvos)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,6 +51,9 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
     token: quote.token, savedTotal: Number(quote.total), items,
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const creatorName = (quote.creator as any)?.name ?? 'Sem vendedor'
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -58,6 +70,10 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
         {quote.status !== 'recusado' && (
           <form action={setStatus.bind(null, quote.id, 'recusado')}><SubmitButton variant="link" className="h-auto px-0 text-red-700 underline">Marcar recusado</SubmitButton></form>
         )}
+        {canReassign
+          ? <OwnerSelect quoteId={quote.id} currentOwnerId={quote.created_by}
+              users={(activeUsers ?? []) as { id: string; name: string }[]} />
+          : <span className="text-muted-foreground">Responsável: {creatorName}</span>}
       </div>
       <QuoteEditor products={products} quote={existing} />
     </div>
