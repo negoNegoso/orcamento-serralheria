@@ -34,7 +34,7 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
             total={Number(quote.total)} markSent={quote.status === 'rascunho'} />
         </div>
       </div>
-      <QuotePresentation company={company} quote={quote} items={items} conditions={conditions} />
+      <QuotePresentation company={company} quote={quote} items={items} conditions={conditions} internal={true} />
     </div>
   )
 }

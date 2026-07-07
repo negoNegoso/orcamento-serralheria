@@ -28,7 +28,7 @@ export default async function OrcamentoPublico({ params }: { params: Promise<{ t
   const items = [...quote.quote_items].sort((a, b) => a.sort_order - b.sort_order)
   return (
     <main className="min-h-dvh bg-background">
-      <QuotePresentation company={company} quote={quote} items={items} conditions={conditions} />
+      <QuotePresentation company={company} quote={quote} items={items} conditions={conditions} internal={false} />
       <div className="mx-auto max-w-2xl p-4">
         <PrintButton />
       </div>
