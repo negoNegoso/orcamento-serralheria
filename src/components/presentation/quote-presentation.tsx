@@ -49,7 +49,7 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
               )}
               {it.qty > 1 && <p className="text-muted-foreground">Quantidade: {it.qty}</p>}
               {(Number(it.extra_value ?? 0) < 0 || (internal && Number(it.extra_value ?? 0) > 0)) && (
-                <p className={Number(it.extra_value) < 0 ? 'text-green-700' : 'text-muted-foreground'}>
+                <p className={Number(it.extra_value) < 0 ? 'text-green-700' : 'text-muted-foreground no-print'}>
                   Ajuste: {Number(it.extra_value) > 0 ? '+' : '−'}{formatBRL(Math.abs(Number(it.extra_value)))}
                 </p>
               )}
