@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Spinner } from '@/components/ui/spinner'
 
 export function PhotoUpload({ folder, value, onChange }: {
   folder: string
@@ -34,7 +35,11 @@ export function PhotoUpload({ folder, value, onChange }: {
         </div>
       )}
       <input type="file" accept="image/*" onChange={onFile} disabled={busy} />
-      {busy && <p className="text-sm">Enviando…</p>}
+      {busy && (
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Spinner className="size-4" /> Enviando…
+        </p>
+      )}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   )

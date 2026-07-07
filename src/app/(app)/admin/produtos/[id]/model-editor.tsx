@@ -37,7 +37,7 @@ export function ModelEditor({ productId, models }: { productId: string; models: 
           <form action={deleteModel}>
             <input type="hidden" name="product_id" value={productId} />
             <input type="hidden" name="id" value={m.id} />
-            <button className="text-xs text-red-600 underline">excluir modelo</button>
+            <SubmitButton variant="link" className="h-auto px-0 text-xs text-red-600 underline">excluir modelo</SubmitButton>
           </form>
         </div>
       ))}

@@ -40,7 +40,7 @@ export default async function PagamentoPage() {
           <ConditionForm c={c} />
           <form action={deleteCondition}>
             <input type="hidden" name="id" value={c.id} />
-            <button className="text-xs text-red-600 underline">excluir</button>
+            <SubmitButton variant="link" className="h-auto px-0 text-xs text-red-600 underline">excluir</SubmitButton>
           </form>
         </div>
       ))}

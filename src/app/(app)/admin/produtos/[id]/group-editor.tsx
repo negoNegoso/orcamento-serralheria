@@ -23,7 +23,7 @@ export function GroupEditor({ productId, groups }: { productId: string; groups: 
           <form action={deleteGroup}>
             <input type="hidden" name="product_id" value={productId} />
             <input type="hidden" name="id" value={g.id} />
-            <button className="text-xs text-red-600 underline">Excluir grupo (e opções)</button>
+            <SubmitButton variant="link" className="h-auto px-0 text-xs text-red-600 underline">Excluir grupo (e opções)</SubmitButton>
           </form>
           <ul className="space-y-2 pl-2">
             {g.options.map(o => (
@@ -47,7 +47,7 @@ export function GroupEditor({ productId, groups }: { productId: string; groups: 
                 <form action={deleteOption}>
                   <input type="hidden" name="product_id" value={productId} />
                   <input type="hidden" name="id" value={o.id} />
-                  <button className="text-xs text-red-600 underline">excluir</button>
+                  <SubmitButton variant="link" className="h-auto px-0 text-xs text-red-600 underline">excluir</SubmitButton>
                 </form>
               </li>
             ))}
