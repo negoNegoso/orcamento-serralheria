@@ -4,6 +4,7 @@ import { getProfile } from '@/lib/auth'
 import { fetchProductConfigs } from '@/lib/queries'
 import { PricingError, calcQuoteTotal } from '@/lib/pricing/calc'
 import { buildSnapshot, type ItemSelection } from '@/lib/pricing/snapshot'
+import { canReassignOwner } from '@/lib/quotes/ownership'
 
 export interface SaveQuoteInput {
   id?: string
@@ -75,4 +76,33 @@ export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'ap
   if (error) throw new Error(error.message)
   revalidatePath('/')
   revalidatePath(`/orcamentos/${id}`)
+}
+
+export async function setQuoteOwner(
+  quoteId: string,
+  newOwnerId: string
+): Promise<{ ok: true } | { error: string }> {
+  const { supabase, user, profile } = await getProfile()
+
+  const { data: quote, error: qErr } = await supabase
+    .from('quotes').select('created_by').eq('id', quoteId).single()
+  if (qErr || !quote) return { error: 'Orçamento não encontrado' }
+
+  if (!canReassignOwner({ role: profile.role, userId: user.id, quoteOwnerId: quote.created_by })) {
+    return { error: 'Sem permissão para trocar o responsável' }
+  }
+
+  const { data: target } = await supabase
+    .from('profiles').select('id').eq('id', newOwnerId).eq('active', true).single()
+  if (!target) return { error: 'Selecione um vendedor ativo' }
+
+  const { error } = await supabase.from('quotes')
+    .update({ created_by: newOwnerId, updated_at: new Date().toISOString() })
+    .eq('id', quoteId)
+  if (error) return { error: 'Erro ao trocar o responsável: ' + error.message }
+
+  revalidatePath('/')
+  revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/admin/dashboard')
+  return { ok: true }
 }
