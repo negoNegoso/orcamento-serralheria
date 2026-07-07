@@ -30,6 +30,9 @@ export function QuotePresentation({ company, quote, items, conditions }: {
           Data: {new Date(quote.created_at).toLocaleDateString('pt-BR')}
           {quote.valid_until && ` · Válido até ${new Date(quote.valid_until + 'T12:00:00').toLocaleDateString('pt-BR')}`}
         </p>
+        {quote.creator?.name && (
+          <p className="text-sm text-muted-foreground">Vendedor: {quote.creator.name}</p>
+        )}
       </section>
 
       <section className="space-y-3">

@@ -17,7 +17,7 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
   const { id } = await params
   const { supabase } = await getProfile()
   const [{ data: quote }, { data: company }, { data: conds }] = await Promise.all([
-    supabase.from('quotes').select('*, quote_items(*)').eq('id', id).single(),
+    supabase.from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('id', id).single(),
     supabase.from('company_settings').select('*').eq('id', 1).single(),
     supabase.from('payment_conditions').select('*'),
   ])

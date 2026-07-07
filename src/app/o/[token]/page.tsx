@@ -18,7 +18,7 @@ export default async function OrcamentoPublico({ params }: { params: Promise<{ t
   if (!/^[a-f0-9]{32}$/.test(token)) notFound()
   const admin = createAdminClient()
   const [{ data: quote }, { data: company }, { data: conds }] = await Promise.all([
-    admin.from('quotes').select('*, quote_items(*)').eq('token', token).single(),
+    admin.from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('token', token).single(),
     admin.from('company_settings').select('*').eq('id', 1).single(),
     admin.from('payment_conditions').select('*'),
   ])
