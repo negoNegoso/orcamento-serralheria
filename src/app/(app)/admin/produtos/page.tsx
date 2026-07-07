@@ -3,7 +3,7 @@ import { getProfile } from '@/lib/auth'
 import { formatBRL } from '@/lib/format'
 import { deleteProduct, saveProduct } from './actions'
 import { ProductForm } from './product-form'
-import { Button } from '@/components/ui/button'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 export default async function ProdutosPage() {
   const { supabase } = await getProfile()
@@ -25,7 +25,7 @@ export default async function ProdutosPage() {
               </p>
             </div>
             <form action={deleteProduct.bind(null, p.id)}>
-              <Button variant="ghost" size="sm" className="text-red-600">Excluir</Button>
+              <SubmitButton variant="ghost" size="sm" className="text-red-600">Excluir</SubmitButton>
             </form>
           </li>
         ))}

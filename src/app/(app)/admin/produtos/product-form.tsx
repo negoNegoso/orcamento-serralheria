@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ProductForm({ product, action }: { product?: any; action: (fd: FormData) => Promise<void> }) {
@@ -50,7 +50,7 @@ export function ProductForm({ product, action }: { product?: any; action: (fd: F
           Ordem <Input name="sort_order" type="number" className="w-20" defaultValue={product?.sort_order ?? 0} />
         </div>
       </div>
-      <Button type="submit" size="sm">{product ? 'Salvar' : 'Adicionar produto'}</Button>
+      <SubmitButton size="sm">{product ? 'Salvar' : 'Adicionar produto'}</SubmitButton>
     </form>
   )
 }
