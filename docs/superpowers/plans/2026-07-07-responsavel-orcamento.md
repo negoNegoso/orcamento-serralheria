@@ -12,7 +12,8 @@
 
 ## Global Constraints
 
-- **Sem migration** — `quotes.created_by` já existe (FK → `profiles(id)`, `on delete set null`)
+- `quotes.created_by` já existe (FK → `profiles(id)`, `on delete set null`) — reusado
+- **Migration 0007** afrouxa `pr_read` de `profiles`: leitura liberada a qualquer autenticado (decisão do usuário) — necessária para vendedores verem/atribuírem colegas; escrita segue admin-only
 - Autorização "admin ou dono" vive na **server action** (opção A); RLS de `quotes` permanece permissivo — não endurecer
 - `created_by` nulo → exibir "Sem vendedor"
 - Reatribuir para **qualquer usuário ativo** (`profiles.active = true`)
@@ -151,6 +152,46 @@ Expected: compila e lint limpo. `npm run test` → 60 verdes (sem novos testes a
 ```bash
 git add "src/app/(app)/orcamentos/actions.ts"
 git commit -m "feat: server action setQuoteOwner (autoriza admin ou dono)
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+```
+
+---
+
+### Task 2b: Migration 0007 — afrouxar leitura de `profiles`
+
+Sem essa mudança, o embed `creator:created_by(name)` e o dropdown de vendedores retornam vazio para não-admins (RLS `pr_read` restringe leitura ao próprio perfil), quebrando exibição e reatribuição por vendedores.
+
+**Files:**
+- Create: `supabase/migrations/0007_profiles_read_all.sql` (+ aplicar via MCP `apply_migration`, name `0007_profiles_read_all`, projeto `nwtfesocleshvynxrpfh`)
+
+**Interfaces:**
+- Consumes: —
+- Produces: qualquer autenticado pode `select` em `profiles`; `pr_write` inalterado (admin-only)
+
+- [ ] **Step 1: Migration**
+
+`supabase/migrations/0007_profiles_read_all.sql`:
+
+```sql
+-- Leitura de perfis liberada a qualquer autenticado (nome/e-mail/papel visíveis
+-- entre a equipe) — necessário para exibir e reatribuir o vendedor responsável.
+-- Escrita permanece admin-only (pr_write inalterado). Anon continua sem acesso.
+drop policy if exists pr_read on profiles;
+create policy pr_read on profiles for select to authenticated using (true);
+```
+
+- [ ] **Step 2: Aplicar e verificar**
+
+Aplicar via MCP `apply_migration` (projeto `nwtfesocleshvynxrpfh`, name `0007_profiles_read_all`, query acima). Depois, via `execute_sql`: `select polname, polcmd from pg_policies where tablename = 'profiles';` → Expected: `pr_read` (select) e `pr_write` (all) presentes; nenhuma política para `anon`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add supabase/migrations/0007_profiles_read_all.sql
+git commit -m "feat: leitura de profiles liberada a autenticados (RLS)
+
+Permite exibir/reatribuir o vendedor responsável; escrita segue admin-only.
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
