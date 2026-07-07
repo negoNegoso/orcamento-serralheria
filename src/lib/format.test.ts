@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatBRL, parseDecimal } from './format'
+import { formatBRL, parseDecimal, quotePdfTitle } from './format'
 
 describe('formatBRL', () => {
   it('formata em pt-BR', () => {
@@ -34,5 +34,17 @@ describe('parseDecimal', () => {
     expect(parseDecimal('-100,50')).toBe(-100.5)
     expect(parseDecimal('-1.200')).toBe(-1200)
     expect(parseDecimal('-1.200,50')).toBe(-1200.5)
+  })
+})
+
+describe('quotePdfTitle', () => {
+  it('prefixa a data de geração no formato DD-MM-YYYY', () => {
+    // meio-dia local evita virada de dia por fuso
+    const createdAt = new Date(2026, 6, 7, 12, 0, 0)
+    expect(quotePdfTitle('João Silva', createdAt)).toBe('07-07-2026 - Orçamento - João Silva')
+  })
+  it('aceita string ISO', () => {
+    const createdAt = new Date(2026, 0, 3, 12, 0, 0).toISOString()
+    expect(quotePdfTitle('Maria', createdAt)).toBe('03-01-2026 - Orçamento - Maria')
   })
 })

@@ -20,3 +20,8 @@ export function parseDecimal(s: string): number {
   const n = Number(normalized)
   return Number.isFinite(n) ? n : 0
 }
+
+export function quotePdfTitle(customerName: string, createdAt: string | Date): string {
+  const date = new Date(createdAt).toLocaleDateString('pt-BR').replace(/\//g, '-')
+  return `${date} - Orçamento - ${customerName}`
+}

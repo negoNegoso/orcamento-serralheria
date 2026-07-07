@@ -2,8 +2,8 @@ import { formatBRL } from '@/lib/format'
 import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
-export function QuotePresentation({ company, quote, items, conditions }: {
-  company: any; quote: any; items: any[]; conditions: { description: string }[]
+export function QuotePresentation({ company, quote, items, conditions, internal = false }: {
+  company: any; quote: any; items: any[]; conditions: { description: string }[]; internal?: boolean
 }) {
   const footer = quoteDisplayFooter(
     Number(quote.subtotal),
@@ -48,7 +48,7 @@ export function QuotePresentation({ company, quote, items, conditions }: {
                 <p className="text-muted-foreground">{(it.selected_options as any[]).map(o => o.label).join(' · ')}</p>
               )}
               {it.qty > 1 && <p className="text-muted-foreground">Quantidade: {it.qty}</p>}
-              {Number(it.extra_value ?? 0) !== 0 && (
+              {(Number(it.extra_value ?? 0) < 0 || (internal && Number(it.extra_value ?? 0) > 0)) && (
                 <p className={Number(it.extra_value) < 0 ? 'text-green-700' : 'text-muted-foreground'}>
                   Ajuste: {Number(it.extra_value) > 0 ? '+' : '−'}{formatBRL(Math.abs(Number(it.extra_value)))}
                 </p>
