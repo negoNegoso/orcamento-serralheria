@@ -1,6 +1,6 @@
 import { getProfile } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { createUser, updateUser } from './actions'
 
 export default async function UsuariosPage() {
@@ -23,7 +23,7 @@ export default async function UsuariosPage() {
               <label className="flex items-center gap-1 text-sm">
                 <input type="checkbox" name="active" defaultChecked={u.active} /> Ativo
               </label>
-              <Button size="sm" variant="outline" type="submit">Salvar</Button>
+              <SubmitButton size="sm" variant="outline">Salvar</SubmitButton>
             </form>
           </li>
         ))}
@@ -37,7 +37,7 @@ export default async function UsuariosPage() {
           <option value="vendedor">Vendedor</option>
           <option value="admin">Admin</option>
         </select>
-        <Button size="sm" type="submit">Criar</Button>
+        <SubmitButton size="sm" pendingLabel="Criando…">Criar</SubmitButton>
       </form>
     </div>
   )

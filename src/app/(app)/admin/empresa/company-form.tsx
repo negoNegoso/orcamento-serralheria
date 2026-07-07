@@ -1,9 +1,9 @@
 'use client'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { PhotoUpload } from '@/components/admin/photo-upload'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +27,7 @@ export function CompanyForm({ settings, action }: { settings: any; action: (fd: 
       <div className="space-y-2"><Label htmlFor="default_validity_days">Validade padrão do orçamento (dias)</Label>
         <Input id="default_validity_days" name="default_validity_days" type="number" min={1}
           defaultValue={settings?.default_validity_days ?? 15} /></div>
-      <Button type="submit">Salvar</Button>
+      <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
     </form>
   )
 }

@@ -5,6 +5,7 @@ import { fetchProductConfigs } from '@/lib/queries'
 import { QuoteEditor, type ExistingQuote } from '@/components/quote/quote-editor'
 import { StatusBadge } from '@/components/quote/status-badge'
 import { Button } from '@/components/ui/button'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { setStatus } from '../actions'
 import type { ItemSelection } from '@/lib/pricing/snapshot'
 
@@ -52,10 +53,10 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
       </div>
       <div className="no-print flex gap-2 text-sm">
         {quote.status !== 'aprovado' && (
-          <form action={setStatus.bind(null, quote.id, 'aprovado')}><button className="text-green-700 underline">Marcar aprovado</button></form>
+          <form action={setStatus.bind(null, quote.id, 'aprovado')}><SubmitButton variant="link" className="h-auto px-0 text-green-700 underline">Marcar aprovado</SubmitButton></form>
         )}
         {quote.status !== 'recusado' && (
-          <form action={setStatus.bind(null, quote.id, 'recusado')}><button className="text-red-700 underline">Marcar recusado</button></form>
+          <form action={setStatus.bind(null, quote.id, 'recusado')}><SubmitButton variant="link" className="h-auto px-0 text-red-700 underline">Marcar recusado</SubmitButton></form>
         )}
       </div>
       <QuoteEditor products={products} quote={existing} />
