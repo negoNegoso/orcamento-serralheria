@@ -5,10 +5,14 @@ import { deleteProduct, saveProduct } from './actions'
 import { ProductForm } from './product-form'
 import { SubmitButton } from '@/components/ui/submit-button'
 
-export default async function ProdutosPage() {
+export default async function ProdutosPage({ searchParams }: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const { q = '' } = await searchParams
   const { supabase } = await getProfile()
-  const { data: products } = await supabase.from('product_types')
-    .select('*').order('sort_order').order('name')
+  let query = supabase.from('product_types').select('*').order('sort_order').order('name')
+  if (q) query = query.ilike('name', `%${q}%`)
+  const { data: products } = await query
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Produtos</h1>
