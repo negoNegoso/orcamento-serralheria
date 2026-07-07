@@ -1,6 +1,6 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SubmitButton } from '@/components/ui/submit-button'
 import type { OptionGroupRow } from '@/lib/config-types'
 import { deleteGroup, deleteOption, saveGroup, saveOption } from './actions'
 
@@ -18,7 +18,7 @@ export function GroupEditor({ productId, groups }: { productId: string; groups: 
               <input type="checkbox" name="required" defaultChecked={g.required} /> Obrigatório
             </label>
             <Input name="sort_order" type="number" defaultValue={g.sort_order} className="w-16" aria-label="Ordem" />
-            <Button size="sm" type="submit">Salvar</Button>
+            <SubmitButton size="sm">Salvar</SubmitButton>
           </form>
           <form action={deleteGroup}>
             <input type="hidden" name="product_id" value={productId} />
@@ -42,7 +42,7 @@ export function GroupEditor({ productId, groups }: { productId: string; groups: 
                     <input type="checkbox" name="active" defaultChecked={o.active} /> Ativa
                   </label>
                   <Input name="sort_order" type="number" defaultValue={o.sort_order} className="w-14" aria-label="Ordem" />
-                  <Button size="sm" variant="outline" type="submit">OK</Button>
+                  <SubmitButton size="sm" variant="outline">OK</SubmitButton>
                 </form>
                 <form action={deleteOption}>
                   <input type="hidden" name="product_id" value={productId} />
@@ -62,7 +62,7 @@ export function GroupEditor({ productId, groups }: { productId: string; groups: 
               <option value="por_m2">R$ por m²</option>
             </select>
             <Input name="surcharge_value" inputMode="decimal" defaultValue={0} className="w-24" />
-            <Button size="sm" type="submit">Adicionar opção</Button>
+            <SubmitButton size="sm">Adicionar opção</SubmitButton>
           </form>
         </div>
       ))}
@@ -72,7 +72,7 @@ export function GroupEditor({ productId, groups }: { productId: string; groups: 
         <label className="flex items-center gap-1 text-sm">
           <input type="checkbox" name="required" /> Obrigatório
         </label>
-        <Button size="sm" type="submit">Adicionar grupo</Button>
+        <SubmitButton size="sm">Adicionar grupo</SubmitButton>
       </form>
     </section>
   )

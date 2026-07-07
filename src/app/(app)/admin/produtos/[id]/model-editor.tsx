@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { PhotoUpload } from '@/components/admin/photo-upload'
 import type { ModelRow } from '@/lib/config-types'
 import { deleteModel, saveModel } from './actions'
@@ -20,7 +20,7 @@ function ModelForm({ productId, model }: { productId: string; model?: ModelRow }
           <input type="checkbox" name="active" defaultChecked={model?.active ?? true} /> Ativo
         </label>
         <Input name="sort_order" type="number" defaultValue={model?.sort_order ?? 0} className="w-16" aria-label="Ordem" />
-        <Button size="sm" type="submit">{model ? 'Salvar' : 'Adicionar modelo'}</Button>
+        <SubmitButton size="sm">{model ? 'Salvar' : 'Adicionar modelo'}</SubmitButton>
       </div>
       <PhotoUpload folder="modelos" value={photo} onChange={setPhoto} />
     </form>

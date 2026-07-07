@@ -1,6 +1,6 @@
 import { getProfile } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { deleteCondition, saveCondition } from './actions'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +21,7 @@ function ConditionForm({ c }: { c?: any }) {
       <label className="flex items-center gap-1 text-sm">
         <input type="checkbox" name="active" defaultChecked={c?.active ?? true} /> Ativa
       </label>
-      <Button size="sm" type="submit">{c ? 'Salvar' : 'Adicionar'}</Button>
+      <SubmitButton size="sm">{c ? 'Salvar' : 'Adicionar'}</SubmitButton>
     </form>
   )
 }
