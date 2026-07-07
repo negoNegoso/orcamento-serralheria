@@ -3,14 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { applicableConditions } from '@/lib/pricing/payment'
 import { QuotePresentation } from '@/components/presentation/quote-presentation'
 import { PrintButton } from './print-button'
+import { quotePdfTitle } from '@/lib/format'
 
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
   const robots = { index: false, follow: false }
   const { token } = await params
   if (!/^[a-f0-9]{32}$/.test(token)) return { robots }
   const admin = createAdminClient()
-  const { data } = await admin.from('quotes').select('customer_name').eq('token', token).single()
-  return { robots, title: data ? `Orçamento - ${data.customer_name}` : 'Orçamento' }
+  const { data } = await admin.from('quotes').select('customer_name, created_at').eq('token', token).single()
+  return { robots, title: data ? quotePdfTitle(data.customer_name, data.created_at) : 'Orçamento' }
 }
 
 export default async function OrcamentoPublico({ params }: { params: Promise<{ token: string }> }) {

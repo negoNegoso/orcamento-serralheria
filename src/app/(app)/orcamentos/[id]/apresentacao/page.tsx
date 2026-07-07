@@ -5,12 +5,13 @@ import { createServerSupabase } from '@/lib/supabase/server'
 import { applicableConditions } from '@/lib/pricing/payment'
 import { QuotePresentation } from '@/components/presentation/quote-presentation'
 import { ShareBar } from '@/components/quote/share-bar'
+import { quotePdfTitle } from '@/lib/format'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabase()
-  const { data } = await supabase.from('quotes').select('customer_name').eq('id', id).single()
-  return { title: data ? `Orçamento - ${data.customer_name}` : 'Orçamento' }
+  const { data } = await supabase.from('quotes').select('customer_name, created_at').eq('id', id).single()
+  return { title: data ? quotePdfTitle(data.customer_name, data.created_at) : 'Orçamento' }
 }
 
 export default async function Apresentacao({ params }: { params: Promise<{ id: string }> }) {
