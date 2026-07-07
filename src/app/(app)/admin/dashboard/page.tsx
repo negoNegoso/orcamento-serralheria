@@ -29,7 +29,7 @@ export default async function DashboardPage({
   const m = { ...EMPTY_METRICS, ...(data as DashboardMetrics | null) }
 
   const monthly = m.monthly.map((d) => ({
-    label: new Date(d.month).toLocaleDateString('pt-BR', { month: 'short' }),
+    label: new Date(d.month).toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }),
     value: Number(d.value),
   }))
 
