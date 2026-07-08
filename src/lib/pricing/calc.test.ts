@@ -119,8 +119,8 @@ describe('calcItem extraValue (ajuste do item)', () => {
 })
 
 describe('calcQuoteTotal', () => {
-  it('soma linhas e aplica desconto', () => {
-    expect(calcQuoteTotal([300, 1260], 60)).toEqual({ subtotal: 1560, total: 1500 })
+  it('soma linhas e aplica desconto (unitTotal = total quando multiplicador 1)', () => {
+    expect(calcQuoteTotal([300, 1260], 60)).toEqual({ subtotal: 1560, unitTotal: 1500, total: 1500 })
   })
   it('desconto padrão 0', () => {
     expect(calcQuoteTotal([100.005]).total).toBe(100.01)
@@ -128,5 +128,15 @@ describe('calcQuoteTotal', () => {
   it('rejeita desconto negativo ou maior que subtotal', () => {
     expect(() => calcQuoteTotal([100], -1)).toThrow(PricingError)
     expect(() => calcQuoteTotal([100], 101)).toThrow(PricingError)
+  })
+  it('multiplicador multiplica o valor por unidade', () => {
+    expect(calcQuoteTotal([300, 1260], 60, 3)).toEqual({ subtotal: 1560, unitTotal: 1500, total: 4500 })
+  })
+  it('multiplicador 1 é o padrão', () => {
+    expect(calcQuoteTotal([100]).total).toBe(calcQuoteTotal([100], 0, 1).total)
+  })
+  it('rejeita multiplicador não inteiro ou menor que 1', () => {
+    expect(() => calcQuoteTotal([100], 0, 0)).toThrow(PricingError)
+    expect(() => calcQuoteTotal([100], 0, 1.5)).toThrow(PricingError)
   })
 })
