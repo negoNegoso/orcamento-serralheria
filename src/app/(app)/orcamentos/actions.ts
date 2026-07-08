@@ -136,5 +136,6 @@ export async function deleteQuote(id: string): Promise<{ error: string } | void>
   if (error) return { error: 'Erro ao excluir: ' + error.message }
 
   revalidatePath('/')
+  revalidatePath('/admin/dashboard')
   redirect('/')
 }
