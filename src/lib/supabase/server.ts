@@ -12,7 +12,7 @@ export async function createServerSupabase() {
         setAll: (list) => {
           try {
             list.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          } catch {} // chamado de Server Component — middleware renova a sessão
+          } catch {} // chamado de Server Component — o proxy renova a sessão
         },
       },
     }
