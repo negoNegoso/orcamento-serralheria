@@ -2,7 +2,7 @@
 -- Nullable no banco: orçamentos antigos e clones não têm a data; a obrigatoriedade é
 -- garantida na aplicação (server action saveQuote).
 
-alter table quotes add column delivery_date date;
+alter table quotes add column if not exists delivery_date date;
 
 -- Recria save_quote_atomic para gravar também a data de entrega no cabeçalho.
 create or replace function public.save_quote_atomic(
