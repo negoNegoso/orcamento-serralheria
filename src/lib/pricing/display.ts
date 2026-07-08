@@ -13,7 +13,11 @@ export interface QuoteFooter {
   subtotal: number
   /** desconto do orçamento + soma dos ajustes negativos dos itens */
   discount: number
-  /** total final — idêntico ao subtotal líquido menos desconto */
+  /** valor líquido de uma unidade (subtotalNet − discount) */
+  unitTotal: number
+  /** número de unidades iguais */
+  multiplier: number
+  /** total final — unitTotal × multiplier */
   total: number
   /** se há alguma dedução a exibir (desconto e/ou ajuste negativo) */
   hasDeduction: boolean
@@ -21,19 +25,24 @@ export interface QuoteFooter {
 
 /**
  * Consolida o rodapé quando ajustes negativos devem seguir a regra do desconto:
- * o abatimento dos itens é somado ao desconto numa única linha. O total não muda.
+ * o abatimento dos itens é somado ao desconto numa única linha. O multiplicador
+ * multiplica o valor líquido por unidade para chegar ao total do projeto.
  */
 export function quoteDisplayFooter(
   subtotalNet: number,
   discount: number,
   extraValues: number[],
+  multiplier = 1,
 ): QuoteFooter {
   const negAdj = round2(-extraValues.reduce((a, v) => a + Math.min(v ?? 0, 0), 0))
   const discountShown = round2(discount + negAdj)
+  const unitTotal = round2(subtotalNet - discount)
   return {
     subtotal: round2(subtotalNet + negAdj),
     discount: discountShown,
-    total: round2(subtotalNet - discount),
+    unitTotal,
+    multiplier,
+    total: round2(unitTotal * multiplier),
     hasDeduction: discountShown > 0,
   }
 }

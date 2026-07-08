@@ -54,4 +54,18 @@ describe('quoteDisplayFooter', () => {
     expect(f.total).toBe(740) // 770 − 30
     expect(f.hasDeduction).toBe(true)
   })
+  it('multiplicador > 1: unitTotal por casa e total multiplicado', () => {
+    const f = quoteDisplayFooter(1400, 50, [-100, 0], 3)
+    expect(f.unitTotal).toBe(1350) // 1400 − 50
+    expect(f.multiplier).toBe(3)
+    expect(f.total).toBe(4050) // 1350 × 3
+    expect(f.subtotal).toBe(1500) // bruto, inalterado
+    expect(f.discount).toBe(150)
+  })
+  it('multiplicador padrão 1: total igual ao unitTotal', () => {
+    const f = quoteDisplayFooter(1000, 0, [0])
+    expect(f.unitTotal).toBe(1000)
+    expect(f.multiplier).toBe(1)
+    expect(f.total).toBe(1000)
+  })
 })
