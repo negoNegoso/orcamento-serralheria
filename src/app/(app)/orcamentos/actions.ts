@@ -120,3 +120,21 @@ export async function cloneQuote(id: string): Promise<void> {
   revalidatePath('/')
   redirect(`/orcamentos/${data as string}`)
 }
+
+export async function deleteQuote(id: string): Promise<{ error: string } | void> {
+  const { supabase, user, profile } = await getProfile()
+
+  const { data: quote, error: qErr } = await supabase
+    .from('quotes').select('created_by').eq('id', id).single()
+  if (qErr || !quote) return { error: 'Orçamento não encontrado' }
+
+  if (!canReassignOwner({ role: profile.role, userId: user.id, quoteOwnerId: quote.created_by })) {
+    return { error: 'Sem permissão para excluir' }
+  }
+
+  const { error } = await supabase.from('quotes').delete().eq('id', id)
+  if (error) return { error: 'Erro ao excluir: ' + error.message }
+
+  revalidatePath('/')
+  redirect('/')
+}
