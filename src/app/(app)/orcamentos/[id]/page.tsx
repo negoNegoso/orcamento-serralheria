@@ -6,6 +6,7 @@ import { canReassignOwner } from '@/lib/quotes/ownership'
 import { QuoteEditor, type ExistingQuote } from '@/components/quote/quote-editor'
 import { StatusBadge } from '@/components/quote/status-badge'
 import { OwnerSelect } from '@/components/quote/owner-select'
+import { DeleteQuoteButton } from '@/components/quote/delete-quote-button'
 import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { setStatus, cloneQuote } from '../actions'
@@ -61,6 +62,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
         <h1 className="text-xl font-bold">Orçamento — {quote.customer_name}</h1>
         <StatusBadge status={quote.status} />
         <div className="ml-auto flex gap-2">
+          {canReassign && <DeleteQuoteButton quoteId={quote.id} />}
           <form action={cloneQuote.bind(null, quote.id)}>
             <SubmitButton type="submit" variant="outline" size="sm">Clonar</SubmitButton>
           </form>
