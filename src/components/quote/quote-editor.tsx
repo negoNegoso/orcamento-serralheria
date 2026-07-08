@@ -20,6 +20,7 @@ export interface ExistingQuote {
   discount: number
   multiplier: number
   status: string
+  delivery_date: string | null
   token: string
   /** total congelado no último salvamento — base do aviso de divergência */
   savedTotal: number
@@ -33,6 +34,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
   const [siteAddress, setSiteAddress] = useState(quote?.site_address ?? '')
   const [discountStr, setDiscountStr] = useState(quote?.discount ? String(quote.discount) : '')
   const [multiplierStr, setMultiplierStr] = useState(String(quote?.multiplier ?? 1))
+  const [deliveryDate, setDeliveryDate] = useState(quote?.delivery_date ?? '')
   const [items, setItems] = useState<ItemSelection[]>(quote?.items ?? [])
   const [editing, setEditing] = useState<number | 'new' | 'dup' | null>(quote ? null : 'new')
   const [dupSeed, setDupSeed] = useState<{ index: number; sel: ItemSelection } | null>(null)
@@ -66,6 +68,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
       customerName, customerPhone, siteAddress,
       discount: discountStr ? parseDecimal(discountStr) : 0,
       multiplier: Math.max(1, Math.trunc(Number(multiplierStr)) || 1),
+      deliveryDate,
       items,
     })
     if ('error' in res) { setError(res.error); setSaving(false); return }
@@ -100,6 +103,8 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
           <Input inputMode="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} /></div>
         <div className="space-y-1"><Label>Endereço da obra</Label>
           <Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} /></div>
+        <div className="space-y-1"><Label>Data de possível entrega *</Label>
+          <Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} /></div>
       </section>
 
       <section className="space-y-3">
@@ -187,7 +192,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
         )}
         {computed.totalError && <p className="text-sm text-red-600">{computed.totalError}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button onClick={onSave} disabled={saving || !computed.allValid || !!computed.totalError || items.length === 0 || !customerName.trim()}>
+        <Button onClick={onSave} disabled={saving || !computed.allValid || !!computed.totalError || items.length === 0 || !customerName.trim() || !deliveryDate}>
           {saving ? 'Salvando…' : saved ? 'Salvo!' : 'Salvar orçamento'}
         </Button>
         <p className="text-xs text-muted-foreground">Ao salvar, os preços são recalculados pela tabela atual e congelados no orçamento.</p>

@@ -50,6 +50,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
     id: quote.id, customer_name: quote.customer_name, customer_phone: quote.customer_phone,
     site_address: quote.site_address, discount: Number(quote.discount),
     multiplier: Number(quote.multiplier ?? 1), status: quote.status,
+    delivery_date: (quote as any).delivery_date ?? null,
     token: quote.token, savedTotal: Number(quote.total), items,
   }
 
@@ -71,6 +72,10 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
           </Link>
         </div>
       </div>
+      <p className="text-sm text-muted-foreground">
+        Criado em: {new Date(quote.created_at).toLocaleDateString('pt-BR')}
+        {(quote as any).delivery_date && ` · Entrega prevista: ${new Date((quote as any).delivery_date + 'T12:00:00').toLocaleDateString('pt-BR')}`}
+      </p>
       <div className="no-print flex gap-2 text-sm">
         {quote.status !== 'aprovado' && (
           <form action={setStatus.bind(null, quote.id, 'aprovado')}><SubmitButton variant="link" className="h-auto px-0 text-green-700 underline">Marcar aprovado</SubmitButton></form>

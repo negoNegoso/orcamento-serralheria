@@ -6,6 +6,7 @@ import { fetchProductConfigs } from '@/lib/queries'
 import { PricingError, calcQuoteTotal } from '@/lib/pricing/calc'
 import { buildSnapshot, type ItemSelection } from '@/lib/pricing/snapshot'
 import { canReassignOwner } from '@/lib/quotes/ownership'
+import { isValidDeliveryDate } from '@/lib/quotes/delivery'
 
 export interface SaveQuoteInput {
   id?: string
@@ -14,6 +15,7 @@ export interface SaveQuoteInput {
   siteAddress: string
   discount: number
   multiplier: number
+  deliveryDate: string
   items: ItemSelection[]
 }
 
@@ -24,6 +26,9 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
     if (input.items.length === 0) return { error: 'Adicione pelo menos um item' }
     if (!Number.isInteger(input.multiplier) || input.multiplier < 1) {
       return { error: 'Multiplicador deve ser um número inteiro maior ou igual a 1' }
+    }
+    if (!isValidDeliveryDate(input.deliveryDate)) {
+      return { error: 'Informe a data de possível entrega' }
     }
 
     const products = await fetchProductConfigs(supabase)
@@ -40,6 +45,7 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
       site_address: input.siteAddress.trim(),
       discount: input.discount,
       multiplier: input.multiplier,
+      delivery_date: input.deliveryDate,
       subtotal,
       total,
       updated_at: new Date().toISOString(),
