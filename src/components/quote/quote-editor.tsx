@@ -34,8 +34,8 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
   const [discountStr, setDiscountStr] = useState(quote?.discount ? String(quote.discount) : '')
   const [multiplierStr, setMultiplierStr] = useState(String(quote?.multiplier ?? 1))
   const [items, setItems] = useState<ItemSelection[]>(quote?.items ?? [])
-  const [editing, setEditing] = useState<number | 'new' | null>(quote ? null : 'new')
-  const [dupIndex, setDupIndex] = useState<number | null>(null)
+  const [editing, setEditing] = useState<number | 'new' | 'dup' | null>(quote ? null : 'new')
+  const [dupSeed, setDupSeed] = useState<{ index: number; sel: ItemSelection } | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -82,11 +82,12 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
     }
   }
 
+  // a cópia só entra na lista quando confirmada; enquanto o formulário está
+  // aberto ela vive em dupSeed, então trocar/cancelar nunca deixa item órfão
   function duplicateItem(i: number) {
     const copy: ItemSelection = { ...items[i], optionIds: [...items[i].optionIds] }
-    setItems(arr => [...arr.slice(0, i + 1), copy, ...arr.slice(i + 1)])
-    setDupIndex(i + 1)
-    setEditing(i + 1)
+    setDupSeed({ index: i, sel: copy })
+    setEditing('dup')
   }
 
   return (
@@ -107,37 +108,44 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
           const s = computed.snaps[i]
           if (editing === i) {
             return <ItemForm key={i} products={products} initial={sel}
-              onConfirm={ns => { setItems(arr => arr.map((x, j) => j === i ? ns : x)); setEditing(null); setDupIndex(null) }}
-              onCancel={() => {
-                if (dupIndex === i) { setItems(arr => arr.filter((_, j) => j !== i)) }
-                setDupIndex(null); setEditing(null)
-              }} />
+              onConfirm={ns => { setItems(arr => arr.map((x, j) => j === i ? ns : x)); setEditing(null) }}
+              onCancel={() => setEditing(null)} />
           }
           return (
-            <div key={i} className="flex items-start justify-between rounded border p-3">
-              {'error' in s
-                ? <p className="text-sm text-red-600">{s.error}</p>
-                : <div className="text-sm">
-                    <p className="font-medium">{s.product_name}{s.model_name && ` — ${s.model_name}`}</p>
-                    <p className="text-muted-foreground">
-                      {s.area_m2 != null && `${s.width_m} × ${s.height_m} m (${s.area_m2} m²) · `}
-                      {s.selected_options.map(o => o.label).join(', ')}
-                      {s.qty > 1 && ` · ${s.qty}un`}
-                    </p>
-                    <p className="font-semibold">{formatBRL(itemDisplayGross(s.line_total, s.extra_value))}</p>
-                    {s.extra_value !== 0 && (
-                      <p className={s.extra_value < 0 ? 'text-green-700' : 'text-muted-foreground'}>
-                        Ajuste: {s.extra_value > 0 ? '+' : '−'}{formatBRL(Math.abs(s.extra_value))}
+            <div key={i} className="space-y-3">
+              <div className="flex items-start justify-between rounded border p-3">
+                {'error' in s
+                  ? <p className="text-sm text-red-600">{s.error}</p>
+                  : <div className="text-sm">
+                      <p className="font-medium">{s.product_name}{s.model_name && ` — ${s.model_name}`}</p>
+                      <p className="text-muted-foreground">
+                        {s.area_m2 != null && `${s.width_m} × ${s.height_m} m (${s.area_m2} m²) · `}
+                        {s.selected_options.map(o => o.label).join(', ')}
+                        {s.qty > 1 && ` · ${s.qty}un`}
                       </p>
-                    )}
-                    {s.note && <p className="italic text-muted-foreground">{s.note}</p>}
-                  </div>}
-              <div className="flex shrink-0 gap-2 text-sm">
-                <button className="underline" onClick={() => duplicateItem(i)}>duplicar</button>
-                <button className="underline" onClick={() => setEditing(i)}>editar</button>
-                <button className="text-red-600 underline"
-                  onClick={() => setItems(arr => arr.filter((_, j) => j !== i))}>remover</button>
+                      <p className="font-semibold">{formatBRL(itemDisplayGross(s.line_total, s.extra_value))}</p>
+                      {s.extra_value !== 0 && (
+                        <p className={s.extra_value < 0 ? 'text-green-700' : 'text-muted-foreground'}>
+                          Ajuste: {s.extra_value > 0 ? '+' : '−'}{formatBRL(Math.abs(s.extra_value))}
+                        </p>
+                      )}
+                      {s.note && <p className="italic text-muted-foreground">{s.note}</p>}
+                    </div>}
+                <div className="flex shrink-0 gap-2 text-sm">
+                  <button className="underline" onClick={() => duplicateItem(i)}>duplicar</button>
+                  <button className="underline" onClick={() => setEditing(i)}>editar</button>
+                  <button className="text-red-600 underline"
+                    onClick={() => setItems(arr => arr.filter((_, j) => j !== i))}>remover</button>
+                </div>
               </div>
+              {editing === 'dup' && dupSeed?.index === i && (
+                <ItemForm products={products} initial={dupSeed.sel}
+                  onConfirm={ns => {
+                    setItems(arr => [...arr.slice(0, i + 1), ns, ...arr.slice(i + 1)])
+                    setEditing(null); setDupSeed(null)
+                  }}
+                  onCancel={() => { setEditing(null); setDupSeed(null) }} />
+              )}
             </div>
           )
         })}
