@@ -35,7 +35,7 @@ begin
 
   insert into quote_items (quote_id, product_type_id, product_name, model_id, model_name,
     model_photo_url, width_m, height_m, area_m2, qty, unit_base_price, selected_options,
-    unit_total, line_total, sort_order)
+    unit_total, line_total, extra_value, note, sort_order)
   select p_quote_id,
     nullif(i->>'product_type_id', '')::uuid,
     i->>'product_name',
@@ -50,6 +50,8 @@ begin
     coalesce(i->'selected_options', '[]'::jsonb),
     (i->>'unit_total')::numeric,
     (i->>'line_total')::numeric,
+    coalesce((i->>'extra_value')::numeric, 0),
+    coalesce(i->>'note', ''),
     (ord - 1)::int
   from jsonb_array_elements(p_items) with ordinality as t(i, ord);
 end;
@@ -86,10 +88,10 @@ begin
 
   insert into quote_items (quote_id, product_type_id, product_name, model_id,
     model_name, model_photo_url, width_m, height_m, area_m2, qty, unit_base_price,
-    selected_options, unit_total, line_total, sort_order)
+    selected_options, unit_total, line_total, extra_value, note, sort_order)
   select v_new_id, product_type_id, product_name, model_id, model_name,
     model_photo_url, width_m, height_m, area_m2, qty, unit_base_price,
-    selected_options, unit_total, line_total, sort_order
+    selected_options, unit_total, line_total, extra_value, note, sort_order
   from quote_items where quote_id = p_source_id;
 
   return v_new_id;
