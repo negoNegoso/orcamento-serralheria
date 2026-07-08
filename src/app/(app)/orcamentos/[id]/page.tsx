@@ -6,9 +6,10 @@ import { canReassignOwner } from '@/lib/quotes/ownership'
 import { QuoteEditor, type ExistingQuote } from '@/components/quote/quote-editor'
 import { StatusBadge } from '@/components/quote/status-badge'
 import { OwnerSelect } from '@/components/quote/owner-select'
+import { DeleteQuoteButton } from '@/components/quote/delete-quote-button'
 import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
-import { setStatus } from '../actions'
+import { setStatus, cloneQuote } from '../actions'
 import type { ItemSelection } from '@/lib/pricing/snapshot'
 
 export default async function OrcamentoDetalhe({ params }: { params: Promise<{ id: string }> }) {
@@ -47,7 +48,8 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
 
   const existing: ExistingQuote = {
     id: quote.id, customer_name: quote.customer_name, customer_phone: quote.customer_phone,
-    site_address: quote.site_address, discount: Number(quote.discount), status: quote.status,
+    site_address: quote.site_address, discount: Number(quote.discount),
+    multiplier: Number(quote.multiplier ?? 1), status: quote.status,
     token: quote.token, savedTotal: Number(quote.total), items,
   }
 
@@ -59,9 +61,15 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-xl font-bold">Orçamento — {quote.customer_name}</h1>
         <StatusBadge status={quote.status} />
-        <Link href={`/orcamentos/${quote.id}/apresentacao`} className="ml-auto">
-          <Button type="button" variant="outline" size="sm">Apresentar / Compartilhar</Button>
-        </Link>
+        <div className="ml-auto flex gap-2">
+          {canReassign && <DeleteQuoteButton quoteId={quote.id} />}
+          <form action={cloneQuote.bind(null, quote.id)}>
+            <SubmitButton type="submit" variant="outline" size="sm">Clonar</SubmitButton>
+          </form>
+          <Link href={`/orcamentos/${quote.id}/apresentacao`}>
+            <Button type="button" variant="outline" size="sm">Apresentar / Compartilhar</Button>
+          </Link>
+        </div>
       </div>
       <div className="no-print flex gap-2 text-sm">
         {quote.status !== 'aprovado' && (

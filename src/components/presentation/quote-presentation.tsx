@@ -9,6 +9,7 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
     Number(quote.subtotal),
     Number(quote.discount),
     items.map(it => Number(it.extra_value ?? 0)),
+    Number(quote.multiplier ?? 1),
   )
   return (
     <article className="mx-auto max-w-2xl space-y-6 p-4 print:p-0">
@@ -65,6 +66,12 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
           <>
             <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(footer.subtotal)}</p>
             <p className="text-sm text-green-700">Desconto: −{formatBRL(footer.discount)}</p>
+          </>
+        )}
+        {footer.multiplier > 1 && (
+          <>
+            <p className="text-sm text-muted-foreground">Valor por unidade: {formatBRL(footer.unitTotal)}</p>
+            <p className="text-sm text-muted-foreground">{footer.multiplier} casas × {formatBRL(footer.unitTotal)}</p>
           </>
         )}
         <p className="text-2xl font-bold">Total: {formatBRL(footer.total)}</p>

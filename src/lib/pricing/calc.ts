@@ -56,9 +56,18 @@ export function calcItem(input: ItemInput): ItemTotals {
   }
 }
 
-export function calcQuoteTotal(lineTotals: number[], discount = 0): { subtotal: number; total: number } {
+export function calcQuoteTotal(
+  lineTotals: number[],
+  discount = 0,
+  multiplier = 1,
+): { subtotal: number; unitTotal: number; total: number } {
   const subtotal = round2(lineTotals.reduce((a, b) => a + b, 0))
   if (discount < 0) throw new PricingError('Desconto não pode ser negativo')
   if (discount > subtotal) throw new PricingError('Desconto não pode ser maior que o subtotal')
-  return { subtotal, total: round2(subtotal - discount) }
+  if (!Number.isInteger(multiplier) || multiplier < 1) {
+    throw new PricingError('Multiplicador deve ser um número inteiro maior ou igual a 1')
+  }
+  const unitTotal = round2(subtotal - discount)
+  const total = round2(unitTotal * multiplier)
+  return { subtotal, unitTotal, total }
 }
