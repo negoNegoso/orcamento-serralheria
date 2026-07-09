@@ -44,3 +44,32 @@ export async function fetchPendencies(supabase: SupabaseClient, quoteId: string)
   if (error) throw new Error(error.message)
   return (data ?? []) as Pendency[]
 }
+
+export interface CalendarQuote {
+  id: string
+  customer_name: string
+  delivery_date: string
+  production_stage: Stage | null
+  archived: boolean
+}
+
+export async function fetchCalendarQuotes(
+  supabase: SupabaseClient, startISO: string, endISO: string,
+): Promise<CalendarQuote[]> {
+  const { data, error } = await supabase
+    .from('quotes')
+    .select('id, customer_name, delivery_date, production_stage, archived_at')
+    .eq('status', 'aprovado')
+    .gte('delivery_date', startISO)
+    .lte('delivery_date', endISO)
+    .not('delivery_date', 'is', null)
+  if (error) throw new Error(error.message)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((q: any) => ({
+    id: q.id,
+    customer_name: q.customer_name,
+    delivery_date: q.delivery_date,
+    production_stage: q.production_stage,
+    archived: q.archived_at != null,
+  }))
+}
