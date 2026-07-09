@@ -90,7 +90,7 @@ export async function fetchArchivedQuotes(
     .not('archived_at', 'is', null)
     .order('delivery_date', { ascending: false, nullsFirst: false })
   if (period.start) query = query.gte('delivery_date', period.start.slice(0, 10))
-  if (period.end) query = query.lte('delivery_date', period.end.slice(0, 10))
+  if (period.end) query = query.lt('delivery_date', period.end.slice(0, 10))
   const { data, error } = await query
   if (error) throw new Error(error.message)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
