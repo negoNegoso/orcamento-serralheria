@@ -86,8 +86,14 @@ export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'ap
   const { error } = await supabase.from('quotes')
     .update({ status, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw new Error(error.message)
+  // ao aprovar, entra no quadro de produção na etapa inicial (só se ainda não tem etapa)
+  if (status === 'aprovado') {
+    await supabase.from('quotes')
+      .update({ production_stage: 'pendente' }).eq('id', id).is('production_stage', null)
+  }
   revalidatePath('/')
   revalidatePath(`/orcamentos/${id}`)
+  revalidatePath('/producao')
 }
 
 export async function setQuoteOwner(
