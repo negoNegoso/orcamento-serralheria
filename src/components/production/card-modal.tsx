@@ -36,7 +36,7 @@ export function CardModal({ quote, todayISO, pendencies, onMove, onConclude, onC
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose} role="dialog" aria-modal="true" aria-label={`Orçamento de ${quote.customer_name}`}>
-      <div className="w-full max-w-lg rounded-lg bg-background p-4 shadow-xl"
+      <div className="w-full max-w-5xl rounded-lg bg-background p-6 shadow-xl"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-2">
           <div>
