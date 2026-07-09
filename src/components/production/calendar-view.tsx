@@ -33,6 +33,9 @@ export function CalendarView({ view, dateISO, days, quotesByDate, todayISO }: {
           <button className="rounded border px-2 py-1" onClick={() => go(view, shiftPeriod(view, dateISO, -1))}>‹</button>
           <button className="rounded border px-2 py-1 text-sm" onClick={() => go(view, todayISO)}>Hoje</button>
           <button className="rounded border px-2 py-1" onClick={() => go(view, shiftPeriod(view, dateISO, 1))}>›</button>
+          <input type="date" value={dateISO} aria-label="Escolher data"
+            onChange={e => { if (e.target.value) go(view, e.target.value) }}
+            className="rounded border bg-background px-2 py-1 text-sm" />
         </div>
       </div>
 
@@ -45,8 +48,12 @@ export function CalendarView({ view, dateISO, days, quotesByDate, todayISO }: {
           return (
             <div key={day} className={`min-h-16 rounded border p-1 ${day === todayISO ? 'ring-2 ring-primary' : ''}`}>
               <div className="text-xs text-muted-foreground">
-                {Number(day.slice(8, 10))}
-                {view === 'dia' && ` — ${new Date(day + 'T12:00:00').toLocaleDateString('pt-BR')}`}
+                {view === 'dia'
+                  ? `${Number(day.slice(8, 10))} — ${new Date(day + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                  : <button className="rounded px-1 hover:bg-muted hover:text-foreground"
+                      title="Ver este dia" onClick={() => go('dia', day)}>
+                      {Number(day.slice(8, 10))}
+                    </button>}
               </div>
               <div className="space-y-1">
                 {list.map(q => (
