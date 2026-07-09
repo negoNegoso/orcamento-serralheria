@@ -73,3 +73,29 @@ export async function fetchCalendarQuotes(
     archived: q.archived_at != null,
   }))
 }
+
+export interface ArchivedQuote {
+  id: string
+  customer_name: string
+  delivery_date: string | null
+  total: number
+  archived_at: string
+}
+
+export async function fetchArchivedQuotes(
+  supabase: SupabaseClient, period: { start: string | null; end: string | null },
+): Promise<ArchivedQuote[]> {
+  let query = supabase.from('quotes')
+    .select('id, customer_name, delivery_date, total, archived_at')
+    .not('archived_at', 'is', null)
+    .order('delivery_date', { ascending: false, nullsFirst: false })
+  if (period.start) query = query.gte('delivery_date', period.start.slice(0, 10))
+  if (period.end) query = query.lte('delivery_date', period.end.slice(0, 10))
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((q: any) => ({
+    id: q.id, customer_name: q.customer_name, delivery_date: q.delivery_date,
+    total: Number(q.total), archived_at: q.archived_at,
+  }))
+}
