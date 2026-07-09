@@ -48,10 +48,10 @@ export function CalendarView({ view, dateISO, days, quotesByDate, todayISO }: {
                 {Number(day.slice(8, 10))}
                 {view === 'dia' && ` — ${new Date(day + 'T12:00:00').toLocaleDateString('pt-BR')}`}
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {list.map(q => (
                   <Link key={q.id} href={`/orcamentos/${q.id}`}
-                    className={`block truncate rounded px-1 text-xs ${q.archived ? 'opacity-40 line-through' : ''} ${
+                    className={`block truncate rounded border bg-background px-1 py-0.5 text-xs shadow-sm hover:bg-muted ${q.archived ? 'opacity-40 line-through' : ''} ${
                       urgencyFor(q.delivery_date, todayISO) === 'atrasado' ? 'text-red-600'
                       : urgencyFor(q.delivery_date, todayISO) === 'urgente' ? 'text-amber-600' : ''}`}
                     title={`${q.customer_name} · ${q.production_stage ? STAGE_LABELS[q.production_stage] : ''}`}>
