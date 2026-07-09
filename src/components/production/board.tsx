@@ -8,6 +8,7 @@ import { urgencyFor, type Urgency } from '@/lib/production/urgency'
 import type { BoardQuote } from '@/lib/production/queries'
 import { setProductionStage, archiveQuote } from '@/app/(app)/producao/actions'
 import { PendencyPanel } from './pendency-panel'
+import { CardModal } from './card-modal'
 import type { Pendency } from '@/lib/production/queries'
 
 const URGENCY_CLASS: Record<Urgency, string> = {
@@ -23,6 +24,7 @@ export function Board({ quotes, todayISO, pendenciesByQuote }: {
   const router = useRouter()
   const [dragId, setDragId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   async function move(id: string, stage: Stage) {
     await setProductionStage(id, stage)
@@ -30,8 +32,11 @@ export function Board({ quotes, todayISO, pendenciesByQuote }: {
   }
   async function conclude(id: string) {
     await archiveQuote(id)
+    setExpandedId(null)
     router.refresh()
   }
+
+  const expandedQuote = quotes.find(q => q.id === expandedId) ?? null
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
@@ -53,7 +58,12 @@ export function Board({ quotes, todayISO, pendenciesByQuote }: {
                 return (
                   <div key={q.id} draggable onDragStart={() => setDragId(q.id)}
                     className="rounded border bg-background p-2 text-sm shadow-sm">
-                    <p className="font-medium">{q.customer_name}</p>
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-medium">{q.customer_name}</p>
+                      <button className="shrink-0 text-muted-foreground hover:text-foreground"
+                        aria-label="Expandir card" title="Expandir"
+                        onClick={() => setExpandedId(q.id)}>⤢</button>
+                    </div>
                     <p className={URGENCY_CLASS[urg]}>
                       {q.delivery_date
                         ? new Date(q.delivery_date + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -87,6 +97,11 @@ export function Board({ quotes, todayISO, pendenciesByQuote }: {
           </div>
         )
       })}
+      {expandedQuote && (
+        <CardModal quote={expandedQuote} todayISO={todayISO}
+          pendencies={pendenciesByQuote[expandedQuote.id] ?? []}
+          onMove={move} onConclude={conclude} onClose={() => setExpandedId(null)} />
+      )}
     </div>
   )
 }
