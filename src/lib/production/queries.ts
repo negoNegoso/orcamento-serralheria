@@ -28,3 +28,19 @@ export async function fetchBoardQuotes(supabase: SupabaseClient): Promise<BoardQ
     open_pendencies: (q.quote_pendencies ?? []).filter((p: { done: boolean }) => !p.done).length,
   }))
 }
+
+export interface Pendency {
+  id: string
+  label: string
+  done: boolean
+}
+
+export async function fetchPendencies(supabase: SupabaseClient, quoteId: string): Promise<Pendency[]> {
+  const { data, error } = await supabase
+    .from('quote_pendencies')
+    .select('id, label, done')
+    .eq('quote_id', quoteId)
+    .order('created_at')
+  if (error) throw new Error(error.message)
+  return (data ?? []) as Pendency[]
+}

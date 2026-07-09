@@ -7,6 +7,8 @@ import { STAGES, STAGE_LABELS, nextStage, prevStage, type Stage } from '@/lib/pr
 import { urgencyFor, type Urgency } from '@/lib/production/urgency'
 import type { BoardQuote } from '@/lib/production/queries'
 import { setProductionStage, archiveQuote } from '@/app/(app)/producao/actions'
+import { PendencyPanel } from './pendency-panel'
+import type { Pendency } from '@/lib/production/queries'
 
 const URGENCY_CLASS: Record<Urgency, string> = {
   atrasado: 'text-red-600 font-semibold',
@@ -15,9 +17,12 @@ const URGENCY_CLASS: Record<Urgency, string> = {
   'sem-data': 'text-muted-foreground italic',
 }
 
-export function Board({ quotes, todayISO }: { quotes: BoardQuote[]; todayISO: string }) {
+export function Board({ quotes, todayISO, pendenciesByQuote }: {
+  quotes: BoardQuote[]; todayISO: string; pendenciesByQuote: Record<string, Pendency[]>
+}) {
   const router = useRouter()
   const [dragId, setDragId] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   async function move(id: string, stage: Stage) {
     await setProductionStage(id, stage)
@@ -68,6 +73,13 @@ export function Board({ quotes, todayISO }: { quotes: BoardQuote[]; todayISO: st
                         : <button onClick={() => conclude(q.id)}
                             className="rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground">Concluir</button>}
                     </div>
+                    <button className="mt-1 text-xs underline text-muted-foreground"
+                      onClick={() => setOpenId(openId === q.id ? null : q.id)}>
+                      {openId === q.id ? 'ocultar pendências' : 'pendências'}
+                    </button>
+                    {openId === q.id && (
+                      <PendencyPanel quoteId={q.id} pendencies={pendenciesByQuote[q.id] ?? []} />
+                    )}
                   </div>
                 )
               })}

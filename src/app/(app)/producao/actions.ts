@@ -24,3 +24,26 @@ export async function archiveQuote(quoteId: string): Promise<void> {
   revalidatePath('/producao/concluidos')
   revalidatePath('/producao/calendario')
 }
+
+export async function addPendency(quoteId: string, label: string): Promise<void> {
+  const { supabase } = await getProfile()
+  const t = label.trim()
+  if (!t) return
+  const { error } = await supabase.from('quote_pendencies').insert({ quote_id: quoteId, label: t })
+  if (error) throw new Error(error.message)
+  revalidatePath('/producao')
+}
+
+export async function togglePendency(id: string, done: boolean): Promise<void> {
+  const { supabase } = await getProfile()
+  const { error } = await supabase.from('quote_pendencies').update({ done }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/producao')
+}
+
+export async function deletePendency(id: string): Promise<void> {
+  const { supabase } = await getProfile()
+  const { error } = await supabase.from('quote_pendencies').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/producao')
+}
