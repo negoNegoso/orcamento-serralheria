@@ -41,6 +41,15 @@ export async function togglePendency(id: string, done: boolean): Promise<void> {
   revalidatePath('/producao')
 }
 
+export async function updatePendency(id: string, label: string): Promise<void> {
+  const { supabase } = await getProfile()
+  const t = label.trim()
+  if (!t) return
+  const { error } = await supabase.from('quote_pendencies').update({ label: t }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/producao')
+}
+
 export async function deletePendency(id: string): Promise<void> {
   const { supabase } = await getProfile()
   const { error } = await supabase.from('quote_pendencies').delete().eq('id', id)
