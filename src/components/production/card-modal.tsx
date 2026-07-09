@@ -40,14 +40,14 @@ export function CardModal({ quote, todayISO, pendencies, onMove, onConclude, onC
         onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="text-lg font-semibold">{quote.customer_name}</h2>
-            <p className="text-sm text-muted-foreground">{STAGE_LABELS[stage]}</p>
+            <h2 className="text-3xl font-semibold">{quote.customer_name}</h2>
+            <p className="text-lg text-muted-foreground">{STAGE_LABELS[stage]}</p>
           </div>
-          <button className="rounded border px-2 py-0.5 text-muted-foreground hover:text-foreground"
+          <button className="rounded border px-3 py-1 text-xl leading-none text-muted-foreground hover:text-foreground"
             aria-label="Fechar" onClick={onClose}>×</button>
         </div>
 
-        <div className="mt-3 space-y-1 text-sm">
+        <div className="mt-4 space-y-1 text-xl">
           <p className={URGENCY_CLASS[urg]}>
             Entrega: {quote.delivery_date
               ? new Date(quote.delivery_date + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -56,20 +56,20 @@ export function CardModal({ quote, todayISO, pendencies, onMove, onConclude, onC
           <p className="text-muted-foreground">{formatBRL(quote.total)}</p>
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-6 flex items-center gap-3">
           <button disabled={!prev} onClick={() => prev && onMove(quote.id, prev)}
-            className="rounded border px-3 py-1 text-sm disabled:opacity-30" aria-label="Voltar etapa">‹ Voltar</button>
+            className="rounded border px-4 py-2 text-base disabled:opacity-30" aria-label="Voltar etapa">‹ Voltar</button>
           {next
             ? <button onClick={() => onMove(quote.id, next)}
-                className="rounded border px-3 py-1 text-sm" aria-label="Avançar etapa">Avançar ›</button>
+                className="rounded border px-4 py-2 text-base" aria-label="Avançar etapa">Avançar ›</button>
             : <button onClick={() => onConclude(quote.id)}
-                className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground">Concluir</button>}
-          <Link href={`/orcamentos/${quote.id}`} className="ml-auto text-sm underline">abrir orçamento</Link>
+                className="rounded bg-primary px-4 py-2 text-base text-primary-foreground">Concluir</button>}
+          <Link href={`/orcamentos/${quote.id}`} className="ml-auto text-base underline">abrir orçamento</Link>
         </div>
 
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold">Pendências</h3>
-          <PendencyPanel quoteId={quote.id} pendencies={pendencies} />
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold">Pendências</h3>
+          <PendencyPanel quoteId={quote.id} pendencies={pendencies} large />
         </div>
       </div>
     </div>
