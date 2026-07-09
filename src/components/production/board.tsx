@@ -41,7 +41,7 @@ export function Board({ quotes, todayISO, pendenciesByQuote }: {
           <div key={stage}
             onDragOver={e => e.preventDefault()}
             onDrop={() => { if (dragId) { move(dragId, stage); setDragId(null) } }}
-            className="w-64 shrink-0 rounded-lg bg-muted/70 p-2">
+            className="w-64 shrink-0 rounded-lg bg-muted-foreground/20 p-2">
             <h3 className="mb-2 px-1 text-sm font-semibold">
               {STAGE_LABELS[stage]} <span className="text-muted-foreground">({cards.length})</span>
             </h3>
