@@ -85,11 +85,11 @@ export function ReciboDocument({ company, quote, items }: {
 
       {/* Tabela de serviços */}
       <section>
-        <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="grid grid-cols-[1fr_4rem_8rem] gap-3 border-b pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <span>Descrição</span><span className="text-center">Qtd</span><span className="text-right">Total</span>
         </div>
         {items.map((it, i) => (
-          <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-3 border-b py-3 text-sm">
+          <div key={i} className="grid grid-cols-[1fr_4rem_8rem] gap-3 border-b py-3 text-sm">
             <span className="font-medium">{it.product_name}{it.model_name && ` — ${it.model_name}`}</span>
             <span className="text-center">{it.qty}</span>
             <span className="text-right font-semibold">{formatBRL(itemDisplayGross(Number(it.line_total), Number(it.extra_value ?? 0)))}</span>
