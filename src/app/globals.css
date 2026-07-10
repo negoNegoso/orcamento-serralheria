@@ -190,6 +190,11 @@
 @media print {
   .no-print { display: none !important; }
   body { background: white !important; }
+  /* Esconde a Vercel Toolbar / Live Feedback no PDF */
+  [data-vercel-toolbar],
+  vercel-live-feedback,
+  #vercel-toolbar,
+  [data-testid="vercel-toolbar"] { display: none !important; }
 }
 
 @layer base {
