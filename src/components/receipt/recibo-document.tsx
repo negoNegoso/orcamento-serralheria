@@ -3,19 +3,22 @@ import { useState } from 'react'
 import { formatBRL } from '@/lib/format'
 import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 import { receiptDeclaration } from '@/lib/receipt/text'
+import { maskCpfCnpj } from '@/lib/receipt/mask'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 
 const ACCENT = '#00b8e6' // ciano da marca L.D
 
-function EditableInput({ value, onChange, placeholder, className = '' }: {
+function EditableInput({ value, onChange, placeholder, className = '', mask }: {
   value: string; onChange: (v: string) => void; placeholder?: string; className?: string
+  mask?: (v: string) => string
 }) {
   return (
     <input
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={e => onChange(mask ? mask(e.target.value) : e.target.value)}
       placeholder={placeholder}
+      inputMode={mask ? 'numeric' : undefined}
       className={`border-b border-dashed border-muted-foreground/40 bg-transparent px-1 outline-none focus:border-solid print:border-none print:placeholder-transparent ${className}`}
     />
   )
@@ -69,7 +72,7 @@ export function ReciboDocument({ company, quote, items }: {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recebemos de</p>
         <p className="text-lg font-semibold">{quote.customer_name}</p>
         <div className="text-sm text-muted-foreground">
-          CPF/CNPJ: <EditableInput value={clientDoc} onChange={setClientDoc} placeholder="informe o documento" className="w-48" />
+          CPF/CNPJ: <EditableInput value={clientDoc} onChange={setClientDoc} placeholder="informe o documento" className="w-48" mask={maskCpfCnpj} />
         </div>
         {quote.customer_phone && <p className="text-sm text-muted-foreground">{quote.customer_phone}</p>}
         {quote.site_address && <p className="text-sm text-muted-foreground">Obra: {quote.site_address}</p>}
@@ -125,7 +128,7 @@ export function ReciboDocument({ company, quote, items }: {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recebedor</p>
         <div className="grid gap-2 text-sm sm:grid-cols-3">
           <div>Nome: <EditableInput value={receiverName} onChange={setReceiverName} placeholder="nome" className="w-full" /></div>
-          <div>Documento: <EditableInput value={receiverDoc} onChange={setReceiverDoc} placeholder="documento" className="w-full" /></div>
+          <div>Documento: <EditableInput value={receiverDoc} onChange={setReceiverDoc} placeholder="documento" className="w-full" mask={maskCpfCnpj} /></div>
           <div>Recebimento: <EditableInput value={receiverMethod} onChange={setReceiverMethod} placeholder="ex.: PIX" className="w-full" /></div>
         </div>
         <div className="pt-10 text-center text-sm">
