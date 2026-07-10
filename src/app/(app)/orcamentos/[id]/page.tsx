@@ -70,6 +70,9 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
           <Link href={`/orcamentos/${quote.id}/apresentacao`}>
             <Button type="button" variant="outline" size="sm">Apresentar / Compartilhar</Button>
           </Link>
+          <Link href={`/orcamentos/${quote.id}/recibo`}>
+            <Button type="button" variant="outline" size="sm">Gerar Recibo</Button>
+          </Link>
         </div>
       </div>
       <p className="text-sm text-muted-foreground">
