@@ -38,8 +38,8 @@ export function ReciboDocument({ company, quote, items }: {
   const [clientDoc, setClientDoc] = useState('')
   const [receiptDate, setReceiptDate] = useState(today)
   const [payment, setPayment] = useState('')
-  const [receiverName, setReceiverName] = useState('')
-  const [receiverDoc, setReceiverDoc] = useState('')
+  const [receiverName, setReceiverName] = useState(company?.receiver_name ?? '')
+  const [receiverDoc, setReceiverDoc] = useState(company?.cnpj ?? '')
   const [receiverMethod, setReceiverMethod] = useState('')
 
   const displayDate = new Date(receiptDate + 'T12:00:00').toLocaleDateString('pt-BR')

@@ -7,6 +7,7 @@ export async function saveCompany(formData: FormData) {
   const { error } = await supabase.from('company_settings').update({
     name: String(formData.get('name') ?? ''),
     cnpj: String(formData.get('cnpj') ?? ''),
+    receiver_name: String(formData.get('receiver_name') ?? ''),
     city: String(formData.get('city') ?? ''),
     phone: String(formData.get('phone') ?? ''),
     about_text: String(formData.get('about_text') ?? ''),

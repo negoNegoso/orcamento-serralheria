@@ -18,6 +18,8 @@ export function CompanyForm({ settings, action }: { settings: any; action: (fd: 
         <Input id="name" name="name" defaultValue={settings?.name ?? ''} required /></div>
       <div className="space-y-2"><Label htmlFor="cnpj">CNPJ</Label>
         <Input id="cnpj" name="cnpj" defaultValue={settings?.cnpj ?? ''} placeholder="00.000.000/0000-00" /></div>
+      <div className="space-y-2"><Label htmlFor="receiver_name">Nome do recebedor (recibo)</Label>
+        <Input id="receiver_name" name="receiver_name" defaultValue={settings?.receiver_name ?? ''} placeholder="Nome de quem recebe o pagamento" /></div>
       <div className="space-y-2"><Label htmlFor="city">Cidade</Label>
         <Input id="city" name="city" defaultValue={settings?.city ?? ''} /></div>
       <div className="space-y-2"><Label htmlFor="phone">Telefone/WhatsApp</Label>
