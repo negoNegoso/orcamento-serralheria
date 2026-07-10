@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { formatBRL } from '@/lib/format'
-import { itemDisplayGross } from '@/lib/pricing/display'
+import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 import { receiptDeclaration } from '@/lib/receipt/text'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
@@ -25,6 +25,12 @@ export function ReciboDocument({ company, quote, items }: {
   company: any; quote: any; items: any[]
 }) {
   const total = Number(quote.total)
+  const footer = quoteDisplayFooter(
+    Number(quote.subtotal),
+    Number(quote.discount),
+    items.map(it => Number(it.extra_value ?? 0)),
+    Number(quote.multiplier ?? 1),
+  )
   const today = new Date().toISOString().slice(0, 10)
   const [clientDoc, setClientDoc] = useState('')
   const [receiptDate, setReceiptDate] = useState(today)
@@ -97,9 +103,21 @@ export function ReciboDocument({ company, quote, items }: {
       </section>
 
       {/* Total */}
-      <section className="text-right">
+      <section className="space-y-1 text-right">
+        {footer.hasDeduction && (
+          <>
+            <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(footer.subtotal)}</p>
+            <p className="text-sm text-green-700">Desconto: −{formatBRL(footer.discount)}</p>
+          </>
+        )}
+        {footer.multiplier > 1 && (
+          <>
+            <p className="text-sm text-muted-foreground">Valor por unidade: {formatBRL(footer.unitTotal)}</p>
+            <p className="text-sm text-muted-foreground">{footer.multiplier} casas × {formatBRL(footer.unitTotal)}</p>
+          </>
+        )}
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total</p>
-        <p className="text-3xl font-bold" style={{ color: ACCENT }}>{formatBRL(total)}</p>
+        <p className="text-3xl font-bold" style={{ color: ACCENT }}>{formatBRL(footer.total)}</p>
       </section>
 
       {/* Recebedor / assinatura */}
