@@ -9,10 +9,12 @@ import { PhotoUpload } from '@/components/admin/photo-upload'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function CompanyForm({ settings, action }: { settings: any; action: (fd: FormData) => Promise<void> }) {
   const [logo, setLogo] = useState<string | null>(settings?.logo_url ?? null)
+  const [signature, setSignature] = useState<string | null>(settings?.signature_url ?? null)
   return (
     <form action={action} className="space-y-4">
       <h1 className="text-xl font-bold">Dados da empresa</h1>
       <input type="hidden" name="logo_url" value={logo ?? ''} />
+      <input type="hidden" name="signature_url" value={signature ?? ''} />
       <div className="space-y-2"><Label>Logo</Label><PhotoUpload folder="logo" value={logo} onChange={setLogo} /></div>
       <div className="space-y-2"><Label htmlFor="name">Nome</Label>
         <Input id="name" name="name" defaultValue={settings?.name ?? ''} required /></div>
@@ -20,6 +22,7 @@ export function CompanyForm({ settings, action }: { settings: any; action: (fd: 
         <Input id="cnpj" name="cnpj" defaultValue={settings?.cnpj ?? ''} placeholder="00.000.000/0000-00" /></div>
       <div className="space-y-2"><Label htmlFor="receiver_name">Nome do recebedor (recibo)</Label>
         <Input id="receiver_name" name="receiver_name" defaultValue={settings?.receiver_name ?? ''} placeholder="Nome de quem recebe o pagamento" /></div>
+      <div className="space-y-2"><Label>Assinatura do recebedor (recibo)</Label><PhotoUpload folder="assinatura" value={signature} onChange={setSignature} /></div>
       <div className="space-y-2"><Label htmlFor="city">Cidade</Label>
         <Input id="city" name="city" defaultValue={settings?.city ?? ''} /></div>
       <div className="space-y-2"><Label htmlFor="phone">Telefone/WhatsApp</Label>

@@ -131,7 +131,9 @@ export function ReciboDocument({ company, quote, items }: {
           <div>Documento: <EditableInput value={receiverDoc} onChange={setReceiverDoc} placeholder="documento" className="w-full" mask={maskCpfCnpj} /></div>
           <div>Recebimento: <EditableInput value={receiverMethod} onChange={setReceiverMethod} placeholder="ex.: PIX" className="w-full" /></div>
         </div>
-        <div className="pt-10 text-center text-sm">
+        <div className="pt-6 text-center text-sm">
+          <img src={company?.signature_url || '/assinatura-recibo.jpeg'} alt="Assinatura"
+            className="mx-auto h-24 w-64 object-contain" />
           <div className="mx-auto w-64 border-t border-slate-400" />
           <p className="text-muted-foreground">Assinatura do recebedor · {displayDate}</p>
         </div>

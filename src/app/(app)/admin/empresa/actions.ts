@@ -14,6 +14,7 @@ export async function saveCompany(formData: FormData) {
     warranty_text: String(formData.get('warranty_text') ?? ''),
     default_validity_days: Number(formData.get('default_validity_days') ?? 15),
     logo_url: String(formData.get('logo_url') ?? '') || null,
+    signature_url: String(formData.get('signature_url') ?? '') || null,
   }).eq('id', 1)
   if (error) throw new Error(error.message)
   revalidatePath('/admin/empresa')
