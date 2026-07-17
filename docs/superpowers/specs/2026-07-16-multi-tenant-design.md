@@ -70,7 +70,7 @@ Tabelas filhas (`option_groups`, `options`, `models`, `quote_items`) recebem `co
 
 ### Storage
 
-Paths do bucket `fotos` ganham prefixo `{company_id}/...`. Policy de storage valida o prefixo contra a empresa efetiva do usuário. Fotos existentes movem para o prefixo da empresa #1 (script), com URLs atualizadas em `models.photo_url` e `companies.logo_url`.
+Paths do bucket `fotos` ganham prefixo `{company_id}/...` para uploads novos. Policy de storage valida o prefixo contra a empresa efetiva do usuário. Fotos existentes **não são movidas**: o bucket é público para leitura por design (links de orçamento enviados a clientes finais exigem isso), então o isolamento de storage é de escrita — arquivos antigos na raiz permanecem legíveis via URLs já gravadas, apenas deixam de ser editáveis/removíveis.
 
 ## 2. RLS / Isolamento
 
