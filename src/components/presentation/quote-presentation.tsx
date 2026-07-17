@@ -77,6 +77,13 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
         <p className="text-2xl font-bold">Total: {formatBRL(footer.total)}</p>
       </section>
 
+      {quote.general_note && (
+        <section>
+          <h2 className="font-semibold">Observações</h2>
+          <p className="whitespace-pre-line text-sm">{quote.general_note}</p>
+        </section>
+      )}
+
       {conditions.length > 0 && (
         <section>
           <h2 className="font-semibold">Formas de pagamento</h2>
