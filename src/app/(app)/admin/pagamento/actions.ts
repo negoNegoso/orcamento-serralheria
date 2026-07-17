@@ -1,6 +1,6 @@
 'use server'
 import { revalidatePath } from 'next/cache'
-import { getProfile } from '@/lib/auth'
+import { getCompany, getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
 
 // vazio → null (sem limite); não-numérico → erro (0 silencioso esconderia a condição de todos os orçamentos)
@@ -13,7 +13,8 @@ function parseRange(s: FormDataEntryValue | null): number | null {
 }
 
 export async function saveCondition(fd: FormData) {
-  const { supabase } = await getProfile()
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
   const id = String(fd.get('id') ?? '')
   const row = {
     description: String(fd.get('description') ?? '').trim(),
@@ -21,6 +22,7 @@ export async function saveCondition(fd: FormData) {
     max_total: parseRange(fd.get('max_total')),
     sort_order: Number(fd.get('sort_order') ?? 0),
     active: fd.get('active') === 'on',
+    company_id: company.id,
   }
   if (!row.description) throw new Error('Descrição obrigatória')
   const { error } = await (id

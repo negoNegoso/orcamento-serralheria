@@ -1,10 +1,11 @@
 'use server'
 import { revalidatePath } from 'next/cache'
-import { getProfile } from '@/lib/auth'
+import { getCompany, getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
 
 export async function saveProduct(formData: FormData) {
-  const { supabase } = await getProfile()
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
   const id = String(formData.get('id') ?? '')
   const mode = String(formData.get('pricing_mode')) as 'm2' | 'fixo' | 'manual'
   const row = {
@@ -14,6 +15,7 @@ export async function saveProduct(formData: FormData) {
     base_price: mode === 'fixo' ? parseDecimal(String(formData.get('base_price') ?? '0')) : null,
     active: formData.get('active') === 'on',
     sort_order: Number(formData.get('sort_order') ?? 0),
+    company_id: company.id,
   }
   if (!row.name) throw new Error('Nome obrigatório')
   const q = id

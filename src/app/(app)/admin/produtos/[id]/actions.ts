@@ -1,6 +1,6 @@
 'use server'
 import { revalidatePath } from 'next/cache'
-import { getProfile } from '@/lib/auth'
+import { getCompany, getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
 
 function reval(fd: FormData) {
@@ -8,13 +8,15 @@ function reval(fd: FormData) {
 }
 
 export async function saveGroup(fd: FormData) {
-  const { supabase } = await getProfile()
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
   const id = String(fd.get('id') ?? '')
   const row = {
     product_type_id: String(fd.get('product_id')),
     name: String(fd.get('name') ?? '').trim(),
     required: fd.get('required') === 'on',
     sort_order: Number(fd.get('sort_order') ?? 0),
+    company_id: company.id,
   }
   if (!row.name) throw new Error('Nome obrigatório')
   const { error } = await (id
@@ -32,7 +34,8 @@ export async function deleteGroup(fd: FormData) {
 }
 
 export async function saveOption(fd: FormData) {
-  const { supabase } = await getProfile()
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
   const id = String(fd.get('id') ?? '')
   const row = {
     group_id: String(fd.get('group_id')),
@@ -41,6 +44,7 @@ export async function saveOption(fd: FormData) {
     surcharge_value: parseDecimal(String(fd.get('surcharge_value') ?? '0')),
     sort_order: Number(fd.get('sort_order') ?? 0),
     active: fd.get('active') === 'on',
+    company_id: company.id,
   }
   if (!row.label) throw new Error('Rótulo obrigatório')
   const { error } = await (id
@@ -58,7 +62,8 @@ export async function deleteOption(fd: FormData) {
 }
 
 export async function saveModel(fd: FormData) {
-  const { supabase } = await getProfile()
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
   const id = String(fd.get('id') ?? '')
   const row = {
     product_type_id: String(fd.get('product_id')),
@@ -67,6 +72,7 @@ export async function saveModel(fd: FormData) {
     surcharge: parseDecimal(String(fd.get('surcharge') ?? '0')),
     sort_order: Number(fd.get('sort_order') ?? 0),
     active: fd.get('active') === 'on',
+    company_id: company.id,
   }
   if (!row.name) throw new Error('Nome obrigatório')
   const { error } = await (id
