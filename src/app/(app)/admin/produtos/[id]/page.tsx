@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getProfile } from '@/lib/auth'
+import { getCompany } from '@/lib/auth'
 import type { ProductConfig } from '@/lib/config-types'
 import { saveProduct } from '../actions'
 import { ProductForm } from '../product-form'
@@ -8,7 +8,7 @@ import { ModelEditor } from './model-editor'
 
 export default async function ProdutoDetalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { supabase } = await getProfile()
+  const { supabase, company } = await getCompany()
   const { data } = await supabase.from('product_types')
     .select('*, option_groups(*, options(*)), models(*)')
     .eq('id', id).single()
@@ -22,7 +22,7 @@ export default async function ProdutoDetalhe({ params }: { params: Promise<{ id:
       <h1 className="text-xl font-bold">{product.name}</h1>
       <ProductForm product={product} action={saveProduct} />
       <GroupEditor productId={product.id} groups={product.option_groups} />
-      <ModelEditor productId={product.id} models={product.models} />
+      <ModelEditor productId={product.id} models={product.models} companyId={company!.id} />
     </div>
   )
 }

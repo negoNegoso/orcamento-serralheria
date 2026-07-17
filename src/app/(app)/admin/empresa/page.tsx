@@ -1,9 +1,15 @@
-import { getProfile } from '@/lib/auth'
+import { getCompany } from '@/lib/auth'
 import { saveCompany } from './actions'
 import { CompanyForm } from './company-form'
 
 export default async function EmpresaPage() {
-  const { supabase } = await getProfile()
-  const { data } = await supabase.from('company_settings').select('*').eq('id', 1).single()
-  return <CompanyForm settings={data} action={saveCompany} />
+  const { supabase, company } = await getCompany()
+  const { data: areas } = await supabase.from('business_areas').select('name').order('name')
+  return (
+    <CompanyForm
+      settings={company}
+      action={saveCompany}
+      areas={(areas ?? []).map((a) => a.name as string)}
+    />
+  )
 }

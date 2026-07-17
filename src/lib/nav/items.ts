@@ -16,6 +16,10 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Usuários', href: '/admin/usuarios', icon: 'group', adminOnly: true },
 ]
 
-export function navFor(role: 'admin' | 'vendedor'): NavItem[] {
-  return NAV_ITEMS.filter((i) => !i.adminOnly || role === 'admin')
+export function navFor(role: 'admin_system' | 'admin' | 'vendedor'): NavItem[] {
+  const items = NAV_ITEMS.filter((i) => !i.adminOnly || role !== 'vendedor')
+  if (role === 'admin_system') {
+    return [...items, { label: 'Sistema', href: '/sistema/empresas', icon: 'admin_panel_settings' }]
+  }
+  return items
 }

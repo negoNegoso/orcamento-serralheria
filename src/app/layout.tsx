@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Orçamentos — Serralheria",
+  title: "Orçamentos",
   description: "Sistema de orçamentos",
 };
 
