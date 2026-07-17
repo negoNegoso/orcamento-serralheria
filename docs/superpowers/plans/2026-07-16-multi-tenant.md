@@ -53,6 +53,7 @@ create table companies (
   receiver_name text not null default '',
   signature_url text,
   accent_color text not null default '#006688' check (accent_color ~ '^#[0-9a-f]{6}$'),
+  business_area text not null default 'Serralheria',
   created_at timestamptz not null default now()
 );
 
@@ -826,6 +827,7 @@ const company = (status: Company['status']): Company => ({
   id: 'c1', name: 'ACME', status, logo_url: null, city: '', phone: '',
   about_text: '', warranty_text: '', default_validity_days: 15,
   cnpj: '', receiver_name: '', signature_url: null, accent_color: '#006688',
+  business_area: 'Serralheria',
 })
 
 describe('effectiveCompanyId', () => {
@@ -879,6 +881,7 @@ export interface Company {
   receiver_name: string
   signature_url: string | null
   accent_color: string
+  business_area: string
 }
 
 interface TenantProfile {
@@ -955,15 +958,17 @@ git commit -m "feat(lib): tipos multi-tenant, effectiveCompanyId e resolveAccess
 
 **Files:**
 - Modify: `src/app/(app)/layout.tsx`
+- Modify: `src/app/layout.tsx` (título genérico)
 - Modify: `src/lib/nav/items.ts`
 - Modify: `src/components/nav/app-shell.tsx`
+- Modify: `src/components/nav/sidebar.tsx` (label dinâmico)
 - Create: `src/components/nav/support-banner.tsx`
 - Create: `src/components/nav/suspended-notice.tsx`
 - Create: `src/app/(app)/support-actions.ts` (server action `exitSupport`)
 
 **Interfaces:**
 - Consumes: `getCompany()`, `resolveAccess()`, `readableTextColor()` (Tasks 5-6).
-- Produces: app inteiro tematizado pela `accent_color` da empresa efetiva; admin_system sem empresa → redirect `/sistema/empresas`; membro de empresa suspensa → aviso; banner fixo em modo suporte. `navFor(role: Profile['role'])` aceita `admin_system`.
+- Produces: app inteiro tematizado pela `accent_color` da empresa efetiva; label da sidebar e título das páginas internas usam `company.business_area`; admin_system sem empresa → redirect `/sistema/empresas`; membro de empresa suspensa → aviso; banner fixo em modo suporte. `navFor(role: Profile['role'])` aceita `admin_system`.
 
 - [ ] **Step 1: `src/lib/nav/items.ts` — navFor com admin_system**
 
@@ -1051,7 +1056,7 @@ export function SuspendedNotice({ companyName }: { companyName: string | null })
 }
 ```
 
-- [ ] **Step 5: `src/app/(app)/layout.tsx` — guards + CSS vars**
+- [ ] **Step 5: `src/app/(app)/layout.tsx` — guards + CSS vars + título dinâmico**
 
 ```tsx
 import { redirect } from 'next/navigation'
@@ -1060,6 +1065,11 @@ import { resolveAccess } from '@/lib/tenant'
 import { readableTextColor } from '@/lib/color'
 import { AppShell } from '@/components/nav/app-shell'
 import { SuspendedNotice } from '@/components/nav/suspended-notice'
+
+export async function generateMetadata() {
+  const { company } = await getCompany()
+  return { title: company ? `Orçamentos — ${company.business_area}` : 'Orçamentos' }
+}
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, company } = await getCompany()
@@ -1108,7 +1118,7 @@ export function AppShell({
   return (
     <div className="min-h-dvh bg-background">
       {profile.role === 'admin_system' && <SupportBanner companyName={company.name} />}
-      <Sidebar items={items} />
+      <Sidebar items={items} businessArea={company.business_area} />
       <TopBar name={profile.name} />
       <main className="p-4 pb-24 md:ml-[260px] md:p-6 md:pb-6">
         <div className="mx-auto max-w-[1280px]">{children}</div>
@@ -1118,6 +1128,12 @@ export function AppShell({
   )
 }
 ```
+
+- [ ] **Step 6b: Label dinâmico na sidebar e título genérico no root**
+
+Em `src/components/nav/sidebar.tsx`: adicionar prop `businessArea: string` à assinatura e trocar o texto fixo da linha 16 (`<p className="label-caps ...">Serralheria</p>`) por `{businessArea}`.
+
+Em `src/app/layout.tsx`: trocar `title: "Orçamentos — Serralheria"` por `title: "Orçamentos"` (o título específico vem do `generateMetadata` do layout `(app)`).
 
 - [ ] **Step 7: Verificar**
 
@@ -1172,6 +1188,7 @@ export async function saveCompany(formData: FormData) {
     logo_url: String(formData.get('logo_url') ?? '') || null,
     signature_url: String(formData.get('signature_url') ?? '') || null,
     accent_color: accent,
+    business_area: String(formData.get('business_area') ?? '').trim() || 'Serralheria',
   }).eq('id', company.id)
   if (error) throw new Error(error.message)
   revalidatePath('/admin/empresa')
@@ -1194,7 +1211,17 @@ Trocar `supabase.from('company_settings').select('*').eq('id', 1).single()` por 
 </label>
 ```
 
-Se a página passa dados ao form via props, propagar `accent_color` do mesmo jeito que os demais campos.
+Adicionar também o campo de área de atuação (texto que aparece na sidebar e no título das páginas):
+
+```tsx
+<label className="block space-y-1">
+  <span className="text-sm font-medium">Área de atuação</span>
+  <input name="business_area" defaultValue={company.business_area} required
+    placeholder="Ex.: Serralheria, Vidraçaria" className="w-full rounded border px-3 py-2" />
+</label>
+```
+
+Se a página passa dados ao form via props, propagar `accent_color` e `business_area` do mesmo jeito que os demais campos.
 
 - [ ] **Step 3: `orcamentos/actions.ts` — validade default + company_id no insert**
 
@@ -1425,6 +1452,7 @@ export async function createCompany(fd: FormData) {
       city: String(fd.get('city') ?? ''),
       phone: String(fd.get('phone') ?? ''),
       accent_color: accent,
+      business_area: String(fd.get('business_area') ?? '').trim() || 'Serralheria',
     })
     .select('id').single()
   if (cErr) throw new Error(cErr.message)
@@ -1459,6 +1487,7 @@ export async function updateCompany(fd: FormData) {
     city: String(fd.get('city') ?? ''),
     phone: String(fd.get('phone') ?? ''),
     accent_color: accent,
+    business_area: String(fd.get('business_area') ?? '').trim() || 'Serralheria',
   }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/sistema/empresas')
@@ -1568,6 +1597,10 @@ export default function NovaEmpresaPage() {
         <input name="phone" className="w-full rounded border px-3 py-2" />
       </label>
       <label className="block space-y-1">
+        <span className="text-sm font-medium">Área de atuação</span>
+        <input name="business_area" required placeholder="Ex.: Serralheria, Vidraçaria" className="w-full rounded border px-3 py-2" />
+      </label>
+      <label className="block space-y-1">
         <span className="text-sm font-medium">Cor destaque</span>
         <input type="color" name="accent_color" defaultValue="#006688" className="h-10 w-20 cursor-pointer rounded border" />
       </label>
@@ -1625,6 +1658,10 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
         <label className="block space-y-1">
           <span className="text-sm font-medium">Telefone</span>
           <input name="phone" defaultValue={c.phone} className="w-full rounded border px-3 py-2" />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Área de atuação</span>
+          <input name="business_area" defaultValue={c.business_area} required className="w-full rounded border px-3 py-2" />
         </label>
         <label className="block space-y-1">
           <span className="text-sm font-medium">Cor destaque</span>

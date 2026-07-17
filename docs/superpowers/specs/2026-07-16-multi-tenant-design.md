@@ -46,6 +46,7 @@ create table companies (
   warranty_text text not null default '',
   default_validity_days int not null default 15,
   accent_color text not null default '#0f766e' check (accent_color ~ '^#[0-9a-f]{6}$'),
+  business_area text not null default 'Serralheria',
   created_at timestamptz not null default now()
 );
 ```
@@ -129,6 +130,14 @@ Continua via service role (`createAdminClient`). Busca o orçamento pelo token e
 - admin_system sem empresa selecionada → cai em `/sistema/empresas`.
 - Membro comum em `/sistema/*` → redirect (mesmo padrão do guard admin atual).
 - Nav lateral do admin_system em suporte: itens normais + "Voltar ao sistema".
+
+## 4a. Área de atuação
+
+Campo `companies.business_area` (ex.: "Serralheria", "Vidraçaria", "Marcenaria") substitui os textos fixos "Serralheria" do app:
+
+- Label da sidebar (`src/components/nav/sidebar.tsx`) passa a exibir a área de atuação da empresa efetiva.
+- Título das páginas internas (`generateMetadata` no layout `(app)`) vira "Orçamentos — [área de atuação]"; o título do root layout fica genérico ("Orçamentos").
+- Editável nos mesmos lugares da cor destaque: `/admin/empresa` e `/sistema/empresas/*`.
 
 ## 4. Cor destaque
 
