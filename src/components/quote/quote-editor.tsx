@@ -146,7 +146,7 @@ export function QuoteEditor({ products, quote, initialClient }: {
                           Ajuste: {s.extra_value > 0 ? '+' : '−'}{formatBRL(Math.abs(s.extra_value))}
                         </p>
                       )}
-                      {s.note && <p className="italic text-muted-foreground">{s.note}</p>}
+                      {s.note && <p className="whitespace-pre-line italic text-muted-foreground">{s.note}</p>}
                     </div>}
                 <div className="flex shrink-0 gap-2 text-sm">
                   <button className="underline" onClick={() => duplicateItem(i)}>duplicar</button>

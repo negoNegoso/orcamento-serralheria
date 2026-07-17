@@ -54,7 +54,7 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
                   Ajuste: {Number(it.extra_value) > 0 ? '+' : '−'}{formatBRL(Math.abs(Number(it.extra_value)))}
                 </p>
               )}
-              {it.note && <p className="italic text-muted-foreground">{it.note}</p>}
+              {it.note && <p className="whitespace-pre-line italic text-muted-foreground">{it.note}</p>}
             </div>
             <p className="shrink-0 font-semibold">{formatBRL(itemDisplayGross(Number(it.line_total), Number(it.extra_value ?? 0)))}</p>
           </div>
