@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 
@@ -8,7 +9,13 @@ export default async function SistemaLayout({ children }: { children: React.Reac
     <div className="min-h-dvh bg-background">
       <header className="border-b px-4 py-3">
         <div className="mx-auto flex max-w-[960px] items-center justify-between">
-          <h1 className="font-semibold">Administração do sistema</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="font-semibold">Administração do sistema</h1>
+            <nav className="flex gap-3 text-sm">
+              <Link href="/sistema/empresas" className="text-muted-foreground hover:underline">Empresas</Link>
+              <Link href="/sistema/areas" className="text-muted-foreground hover:underline">Áreas</Link>
+            </nav>
+          </div>
           <span className="text-sm text-muted-foreground">{profile.name}</span>
         </div>
       </header>
