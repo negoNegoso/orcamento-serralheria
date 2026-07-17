@@ -12,16 +12,23 @@ async function requireAdminSystem() {
   return profile
 }
 
-export async function createCompany(fd: FormData) {
+export type CreateCompanyState = { error?: string }
+
+export async function createCompany(
+  _prev: CreateCompanyState,
+  fd: FormData,
+): Promise<CreateCompanyState> {
   await requireAdminSystem()
   const name = String(fd.get('name') ?? '').trim()
   const accent = String(fd.get('accent_color') ?? '#006688').toLowerCase()
   const adminName = String(fd.get('admin_name') ?? '').trim()
   const adminEmail = String(fd.get('admin_email') ?? '').trim()
   const adminPassword = String(fd.get('admin_password') ?? '')
-  if (!name || !adminName || !adminEmail || adminPassword.length < 8)
-    throw new Error('Dados inválidos (senha mínima: 8 caracteres)')
-  if (!isValidHexColor(accent)) throw new Error('Cor inválida')
+  if (!name || !adminName || !adminEmail)
+    return { error: 'Preencha nome da empresa, nome e e-mail do admin.' }
+  if (adminPassword.length < 8)
+    return { error: 'A senha do admin deve ter no mínimo 8 caracteres.' }
+  if (!isValidHexColor(accent)) return { error: 'Cor inválida.' }
 
   const admin = createAdminClient()
   const { data: company, error: cErr } = await admin.from('companies')
@@ -33,7 +40,7 @@ export async function createCompany(fd: FormData) {
       business_area: normalizeAreaName(String(fd.get('business_area') ?? '')) || 'Serralheria',
     })
     .select('id').single()
-  if (cErr) throw new Error(cErr.message)
+  if (cErr) return { error: cErr.message }
   const createArea = normalizeAreaName(String(fd.get('business_area') ?? ''))
   if (createArea) await admin.from('business_areas').insert({ name: createArea })
 
@@ -41,7 +48,8 @@ export async function createCompany(fd: FormData) {
     .createUser({ email: adminEmail, password: adminPassword, email_confirm: true })
   if (uErr) {
     await admin.from('companies').delete().eq('id', company.id) // rollback
-    throw new Error(uErr.message)
+    const emailTaken = uErr.code === 'email_exists' || uErr.status === 422
+    return { error: emailTaken ? 'Já existe um usuário com este e-mail.' : uErr.message }
   }
   const { error: pErr } = await admin.from('profiles').insert({
     id: userData.user.id, email: adminEmail, name: adminName,
@@ -50,7 +58,7 @@ export async function createCompany(fd: FormData) {
   if (pErr) {
     await admin.auth.admin.deleteUser(userData.user.id) // rollback
     await admin.from('companies').delete().eq('id', company.id)
-    throw new Error(pErr.message)
+    return { error: pErr.message }
   }
   revalidatePath('/sistema/empresas')
   redirect('/sistema/empresas')
