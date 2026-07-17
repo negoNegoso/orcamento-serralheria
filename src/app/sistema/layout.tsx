@@ -14,6 +14,7 @@ export default async function SistemaLayout({ children }: { children: React.Reac
             <nav className="flex gap-3 text-sm">
               <Link href="/sistema/empresas" className="text-muted-foreground hover:underline">Empresas</Link>
               <Link href="/sistema/areas" className="text-muted-foreground hover:underline">Áreas</Link>
+              <Link href="/sistema/usuarios" className="text-muted-foreground hover:underline">Usuários</Link>
             </nav>
           </div>
           <span className="text-sm text-muted-foreground">{profile.name}</span>
