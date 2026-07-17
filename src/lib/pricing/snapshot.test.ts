@@ -33,7 +33,8 @@ const portao: ProductConfig = {
     },
   ],
   models: [
-    { id: 'm1', name: 'Lambril', photo_url: 'http://x/f.jpg', surcharge: 150, active: true, sort_order: 0 },
+    { id: 'm1', name: 'Lambril', photo_url: 'http://x/f.jpg', surcharge: 150, surcharge_type: 'fixo', active: true, sort_order: 0 },
+    { id: 'm2', name: 'Veneziana', photo_url: null, surcharge: 50, surcharge_type: 'por_m2', active: true, sort_order: 1 },
   ],
 }
 
@@ -62,6 +63,11 @@ describe('buildSnapshot', () => {
     expect(s.selected_options).toEqual([
       { optionId: 'o2', group: 'Cor', label: 'Bronze', surchargeType: 'fixo', surchargeValue: 500 },
     ])
+  })
+  it('aplica adicional do modelo por m²', () => {
+    const s = buildSnapshot(portao, sel({ optionIds: ['o1'], modelId: 'm2' }))
+    expect(s.model_name).toBe('Veneziana')
+    expect(s.unit_total).toBe(450) // 300 + 50×3 m²
   })
   it('rejeita grupo obrigatório sem seleção', () => {
     expect(() => buildSnapshot(portao, sel({ optionIds: [] }))).toThrow(PricingError)

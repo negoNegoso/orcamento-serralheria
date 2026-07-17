@@ -75,6 +75,7 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     qty: sel.qty,
     options: selected,
     modelSurcharge: model?.surcharge ?? 0,
+    modelSurchargeType: model?.surcharge_type ?? 'fixo',
     extraValue: sel.extraValue,
   })
 

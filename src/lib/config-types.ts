@@ -20,6 +20,7 @@ export interface ModelRow {
   name: string
   photo_url: string | null
   surcharge: number
+  surcharge_type: 'fixo' | 'por_m2'
   active: boolean
   sort_order: number
 }

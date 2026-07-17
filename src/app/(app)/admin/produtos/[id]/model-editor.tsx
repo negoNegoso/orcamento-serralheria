@@ -15,7 +15,11 @@ function ModelForm({ productId, model, companyId }: { productId: string; model?:
       <input type="hidden" name="photo_url" value={photo ?? ''} />
       <div className="flex flex-wrap items-end gap-2">
         <Input name="name" defaultValue={model?.name ?? ''} placeholder="Nome do modelo" className="w-44" required />
-        <Input name="surcharge" inputMode="decimal" defaultValue={model?.surcharge ?? 0} className="w-24" aria-label="Adicional R$" />
+        <select name="surcharge_type" defaultValue={model?.surcharge_type ?? 'fixo'} className="rounded border bg-background p-2 text-sm" aria-label="Tipo do adicional">
+          <option value="fixo">R$ fixo</option>
+          <option value="por_m2">R$ por m²</option>
+        </select>
+        <Input name="surcharge" inputMode="decimal" defaultValue={model?.surcharge ?? 0} className="w-24" aria-label="Adicional" />
         <label className="flex items-center gap-1 text-sm">
           <input type="checkbox" name="active" defaultChecked={model?.active ?? true} /> Ativo
         </label>

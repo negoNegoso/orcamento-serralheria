@@ -118,7 +118,7 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={m.photo_url} alt={m.name} className="h-20 w-24 rounded object-cover" />
                   : <div className="flex h-20 w-24 items-center justify-center rounded bg-muted">sem foto</div>}
-                <p className="mt-1 w-24 truncate">{m.name}{m.surcharge > 0 && ` +${formatBRL(m.surcharge)}`}</p>
+                <p className="mt-1 w-24 truncate">{m.name}{m.surcharge > 0 && ` +${formatBRL(m.surcharge)}${m.surcharge_type === 'por_m2' ? '/m²' : ''}`}</p>
               </button>
             ))}
           </div>
