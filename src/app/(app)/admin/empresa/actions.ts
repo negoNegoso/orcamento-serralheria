@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { getCompany } from '@/lib/auth'
 import { isValidHexColor } from '@/lib/color'
+import { normalizeAreaName } from '@/lib/business-area'
 
 export async function saveCompany(formData: FormData) {
   const { supabase, company } = await getCompany()
@@ -20,9 +21,11 @@ export async function saveCompany(formData: FormData) {
     logo_url: String(formData.get('logo_url') ?? '') || null,
     signature_url: String(formData.get('signature_url') ?? '') || null,
     accent_color: accent,
-    business_area: String(formData.get('business_area') ?? '').trim() || 'Serralheria',
+    business_area: normalizeAreaName(String(formData.get('business_area') ?? '')) || 'Serralheria',
   }).eq('id', company.id)
   if (error) throw new Error(error.message)
+  const area = normalizeAreaName(String(formData.get('business_area') ?? ''))
+  if (area) await supabase.from('business_areas').insert({ name: area })
   revalidatePath('/admin/empresa')
   revalidatePath('/', 'layout')
 }

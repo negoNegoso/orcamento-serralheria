@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 import { isValidHexColor } from '@/lib/color'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { normalizeAreaName } from '@/lib/business-area'
 
 async function requireAdminSystem() {
   const { profile } = await getProfile()
@@ -29,10 +30,12 @@ export async function createCompany(fd: FormData) {
       city: String(fd.get('city') ?? ''),
       phone: String(fd.get('phone') ?? ''),
       accent_color: accent,
-      business_area: String(fd.get('business_area') ?? '').trim() || 'Serralheria',
+      business_area: normalizeAreaName(String(fd.get('business_area') ?? '')) || 'Serralheria',
     })
     .select('id').single()
   if (cErr) throw new Error(cErr.message)
+  const createArea = normalizeAreaName(String(fd.get('business_area') ?? ''))
+  if (createArea) await admin.from('business_areas').insert({ name: createArea })
 
   const { data: userData, error: uErr } = await admin.auth.admin
     .createUser({ email: adminEmail, password: adminPassword, email_confirm: true })
@@ -64,9 +67,11 @@ export async function updateCompany(fd: FormData) {
     city: String(fd.get('city') ?? ''),
     phone: String(fd.get('phone') ?? ''),
     accent_color: accent,
-    business_area: String(fd.get('business_area') ?? '').trim() || 'Serralheria',
+    business_area: normalizeAreaName(String(fd.get('business_area') ?? '')) || 'Serralheria',
   }).eq('id', id)
   if (error) throw new Error(error.message)
+  const updateArea = normalizeAreaName(String(fd.get('business_area') ?? ''))
+  if (updateArea) await admin.from('business_areas').insert({ name: updateArea })
   revalidatePath('/sistema/empresas')
   revalidatePath(`/sistema/empresas/${id}`)
 }
