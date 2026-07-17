@@ -17,7 +17,7 @@ export async function searchClients(term: string): Promise<ClientHit[]> {
   if (safe.length < 2) return []
   const digits = normalizePhone(safe)
   const filters = [`name.ilike.%${safe}%`]
-  if (digits.length >= 4) filters.push(`phone.ilike.%${digits}%`)
+  if (digits.length >= 4) filters.push(`phone_digits.ilike.%${digits}%`)
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, phone')

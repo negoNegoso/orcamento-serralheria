@@ -4,8 +4,11 @@ create table clients (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   phone text not null default '',
+  -- só dígitos do telefone: permite busca por telefone independente da formatação
+  phone_digits text generated always as (regexp_replace(phone, '\D', '', 'g')) stored,
   created_at timestamptz not null default now()
 );
+create index clients_phone_digits_idx on clients(phone_digits);
 
 alter table quotes add column client_id uuid references clients(id) on delete set null;
 create index quotes_client_idx on quotes(client_id);
