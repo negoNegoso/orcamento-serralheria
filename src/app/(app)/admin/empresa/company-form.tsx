@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { PhotoUpload } from '@/components/admin/photo-upload'
+import { BusinessAreaInput } from '@/components/business-area-input'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function CompanyForm({ settings, action }: { settings: any; action: (fd: FormData) => Promise<void> }) {
+export function CompanyForm({ settings, action, areas }: { settings: any; action: (fd: FormData) => Promise<void>; areas: string[] }) {
   const [logo, setLogo] = useState<string | null>(settings?.logo_url ?? null)
   const [signature, setSignature] = useState<string | null>(settings?.signature_url ?? null)
   const companyId = settings?.id ?? ''
@@ -25,7 +26,7 @@ export function CompanyForm({ settings, action }: { settings: any; action: (fd: 
         <Input id="receiver_name" name="receiver_name" defaultValue={settings?.receiver_name ?? ''} placeholder="Nome de quem recebe o pagamento" /></div>
       <div className="space-y-2"><Label>Assinatura do recebedor (recibo)</Label><PhotoUpload folder={`${companyId}/assinatura`} value={signature} onChange={setSignature} /></div>
       <div className="space-y-2"><Label htmlFor="business_area">Área de atuação</Label>
-        <Input id="business_area" name="business_area" defaultValue={settings?.business_area ?? 'Serralheria'} required placeholder="Ex.: Serralheria, Vidraçaria" />
+        <BusinessAreaInput areas={areas} defaultValue={settings?.business_area ?? 'Serralheria'} required className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
         <span className="block text-xs text-muted-foreground">Aparece na barra lateral e no título das páginas.</span></div>
       <div className="space-y-2"><Label htmlFor="accent_color">Cor destaque</Label>
         <input id="accent_color" type="color" name="accent_color" defaultValue={settings?.accent_color ?? '#006688'}
