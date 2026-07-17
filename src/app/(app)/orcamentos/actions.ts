@@ -17,6 +17,7 @@ export interface SaveQuoteInput {
   discount: number
   multiplier: number
   deliveryDate: string
+  generalNote: string
   items: ItemSelection[]
 }
 
@@ -49,6 +50,7 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
       discount: input.discount,
       multiplier: input.multiplier,
       delivery_date: input.deliveryDate,
+      general_note: input.generalNote.trim(),
       subtotal,
       total,
       updated_at: new Date().toISOString(),
