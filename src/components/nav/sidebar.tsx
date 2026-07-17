@@ -4,7 +4,7 @@ import { NavLink } from './nav-link'
 import { LogoutButton } from '@/components/logout-button'
 import type { NavItem } from '@/lib/nav/items'
 
-export function Sidebar({ items }: { items: NavItem[] }) {
+export function Sidebar({ items, businessArea }: { items: NavItem[]; businessArea: string }) {
   return (
     <aside className="no-print fixed left-0 top-0 z-50 hidden h-full w-[260px] flex-col border-r border-border bg-card px-4 py-6 md:flex">
       <div className="mb-8 flex items-center gap-3 px-3">
@@ -13,7 +13,7 @@ export function Sidebar({ items }: { items: NavItem[] }) {
         </div>
         <div>
           <h1 className="text-lg font-bold leading-none text-primary">Orçamentos</h1>
-          <p className="label-caps text-on-surface-variant opacity-70">Serralheria</p>
+          <p className="label-caps text-on-surface-variant opacity-70">{businessArea}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1">

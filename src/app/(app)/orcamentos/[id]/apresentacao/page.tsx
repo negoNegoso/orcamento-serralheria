@@ -17,12 +17,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function Apresentacao({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { supabase } = await getProfile()
-  const [{ data: quote }, { data: company }, { data: conds }] = await Promise.all([
-    supabase.from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('id', id).single(),
-    supabase.from('company_settings').select('*').eq('id', 1).single(),
+  const { data: quote } = await supabase
+    .from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('id', id).single()
+  if (!quote) notFound()
+  const [{ data: company }, { data: conds }] = await Promise.all([
+    supabase.from('companies').select('*').eq('id', quote.company_id).single(),
     supabase.from('payment_conditions').select('*'),
   ])
-  if (!quote) notFound()
   const conditions = applicableConditions(conds ?? [], Number(quote.total))
   const items = [...quote.quote_items].sort((a, b) => a.sort_order - b.sort_order)
   return (
