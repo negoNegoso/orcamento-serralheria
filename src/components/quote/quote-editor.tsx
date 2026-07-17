@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import type { ProductConfig } from '@/lib/config-types'
 import { formatBRL, parseDecimal } from '@/lib/format'
 import { PricingError, calcQuoteTotal } from '@/lib/pricing/calc'
@@ -24,6 +25,7 @@ export interface ExistingQuote {
   multiplier: number
   status: string
   delivery_date: string | null
+  general_note: string
   token: string
   /** total congelado no último salvamento — base do aviso de divergência */
   savedTotal: number
@@ -45,6 +47,7 @@ export function QuoteEditor({ products, quote, initialClient }: {
   const [discountStr, setDiscountStr] = useState(quote?.discount ? String(quote.discount) : '')
   const [multiplierStr, setMultiplierStr] = useState(String(quote?.multiplier ?? 1))
   const [deliveryDate, setDeliveryDate] = useState(quote?.delivery_date ?? '')
+  const [generalNote, setGeneralNote] = useState(quote?.general_note ?? '')
   const [items, setItems] = useState<ItemSelection[]>(quote?.items ?? [])
   const [editing, setEditing] = useState<number | 'new' | 'dup' | null>(quote ? null : 'new')
   const [dupSeed, setDupSeed] = useState<{ index: number; sel: ItemSelection } | null>(null)
@@ -80,6 +83,7 @@ export function QuoteEditor({ products, quote, initialClient }: {
       discount: discountStr ? parseDecimal(discountStr) : 0,
       multiplier: Math.max(1, Math.trunc(Number(multiplierStr)) || 1),
       deliveryDate,
+      generalNote,
       items,
     })
     if ('error' in res) { setError(res.error); setSaving(false); return }
@@ -142,7 +146,7 @@ export function QuoteEditor({ products, quote, initialClient }: {
                           Ajuste: {s.extra_value > 0 ? '+' : '−'}{formatBRL(Math.abs(s.extra_value))}
                         </p>
                       )}
-                      {s.note && <p className="italic text-muted-foreground">{s.note}</p>}
+                      {s.note && <p className="whitespace-pre-line italic text-muted-foreground">{s.note}</p>}
                     </div>}
                 <div className="flex shrink-0 gap-2 text-sm">
                   <button className="underline" onClick={() => duplicateItem(i)}>duplicar</button>
@@ -167,6 +171,11 @@ export function QuoteEditor({ products, quote, initialClient }: {
               onConfirm={ns => { setItems(arr => [...arr, ns]); setEditing(null) }}
               onCancel={() => setEditing(null)} />
           : <Button variant="outline" onClick={() => setEditing('new')}>+ Adicionar item</Button>}
+        <div className="space-y-1">
+          <Label>Observações gerais</Label>
+          <Textarea rows={3} value={generalNote} onChange={e => setGeneralNote(e.target.value)}
+            placeholder="Condições especiais, prazos, detalhes combinados…" />
+        </div>
       </section>
 
       <section className="space-y-2 border-t pt-3">

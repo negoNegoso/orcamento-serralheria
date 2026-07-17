@@ -52,6 +52,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
     site_address: quote.site_address, discount: Number(quote.discount),
     multiplier: Number(quote.multiplier ?? 1), status: quote.status,
     delivery_date: (quote as any).delivery_date ?? null,
+    general_note: (quote as any).general_note ?? '',
     token: quote.token, savedTotal: Number(quote.total), items,
   }
 
