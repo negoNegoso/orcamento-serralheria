@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { effectiveCompanyId, resolveAccess, type Company } from './tenant'
+import { effectiveCompanyId, isCompanyAdmin, resolveAccess, type Company } from './tenant'
 
 const company = (status: Company['status']): Company => ({
   id: 'c1', name: 'ACME', status, logo_url: null, city: '', phone: '',
@@ -21,8 +21,25 @@ describe('effectiveCompanyId', () => {
   })
 })
 
-describe('resolveAccess', () => {
-  it('membro de empresa ativa acessa o app', () => {
+describe('isCompanyAdmin', () => {
+  it('admin com empresa é admin da empresa', () => {
+    expect(isCompanyAdmin({ role: 'admin', company_id: 'c1', acting_company_id: null })).toBe(true)
+  })
+  it('admin sem empresa não é admin', () => {
+    expect(isCompanyAdmin({ role: 'admin', company_id: null, acting_company_id: null })).toBe(false)
+  })
+  it('admin_system atuando numa empresa é admin da empresa', () => {
+    expect(isCompanyAdmin({ role: 'admin_system', company_id: null, acting_company_id: 'c2' })).toBe(true)
+  })
+  it('admin_system sem seleção não é admin', () => {
+    expect(isCompanyAdmin({ role: 'admin_system', company_id: null, acting_company_id: null })).toBe(false)
+  })
+  it('vendedor nunca é admin', () => {
+    expect(isCompanyAdmin({ role: 'vendedor', company_id: 'c1', acting_company_id: null })).toBe(false)
+  })
+})
+
+describe('resolveAccess', () => {  it('membro de empresa ativa acessa o app', () => {
     expect(resolveAccess({ role: 'admin', company_id: 'c1', acting_company_id: null }, company('ativa'))).toBe('ok')
   })
   it('membro de empresa suspensa é bloqueado', () => {
