@@ -1,11 +1,14 @@
 import { getProfile } from '@/lib/auth'
+import { effectiveCompanyId } from '@/lib/tenant'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { createUser, updateUser } from './actions'
 
 export default async function UsuariosPage() {
-  const { supabase } = await getProfile()
-  const { data: users } = await supabase.from('profiles').select('*').order('created_at')
+  const { supabase, profile } = await getProfile()
+  const companyId = effectiveCompanyId(profile)
+  const { data: users } = await supabase.from('profiles').select('*')
+    .eq('company_id', companyId ?? '').order('created_at')
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Usuários</h1>
