@@ -1,7 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { getProfile } from '@/lib/auth'
+import { getCompany, getProfile } from '@/lib/auth'
 import { fetchProductConfigs } from '@/lib/queries'
 import { PricingError, calcQuoteTotal } from '@/lib/pricing/calc'
 import { buildSnapshot, type ItemSelection } from '@/lib/pricing/snapshot'
@@ -21,7 +21,8 @@ export interface SaveQuoteInput {
 }
 
 export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } | { error: string }> {
-  const { supabase, user } = await getProfile()
+  const { supabase, user, company } = await getCompany()
+  if (!company) return { error: 'Sem empresa ativa' }
   try {
     if (!input.customerName.trim()) return { error: 'Informe o nome do cliente' }
     if (input.items.length === 0) return { error: 'Adicione pelo menos um item' }
@@ -55,12 +56,10 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
 
     let quoteId = input.id
     if (!quoteId) {
-      const { data: settings } = await supabase.from('company_settings')
-        .select('default_validity_days').eq('id', 1).single()
-      const days = settings?.default_validity_days ?? 15
+      const days = company.default_validity_days ?? 15
       const validUntil = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
       const { data, error } = await supabase.from('quotes')
-        .insert({ ...quoteRow, created_by: user.id, valid_until: validUntil })
+        .insert({ ...quoteRow, created_by: user.id, valid_until: validUntil, company_id: company.id })
         .select('id').single()
       if (error) throw new Error(error.message)
       quoteId = data.id as string

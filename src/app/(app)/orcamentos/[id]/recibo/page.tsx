@@ -15,11 +15,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ReciboPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { supabase } = await getProfile()
-  const [{ data: quote }, { data: company }] = await Promise.all([
-    supabase.from('quotes').select('*, quote_items(*)').eq('id', id).single(),
-    supabase.from('company_settings').select('*').eq('id', 1).single(),
-  ])
+  const { data: quote } = await supabase.from('quotes').select('*, quote_items(*)').eq('id', id).single()
   if (!quote) notFound()
+  const { data: company } = await supabase.from('companies').select('*').eq('id', quote.company_id).single()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const items = [...(quote.quote_items as any[])].sort((a, b) => a.sort_order - b.sort_order)
   return (

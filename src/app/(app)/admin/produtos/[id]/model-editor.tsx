@@ -6,7 +6,7 @@ import { PhotoUpload } from '@/components/admin/photo-upload'
 import type { ModelRow } from '@/lib/config-types'
 import { deleteModel, saveModel } from './actions'
 
-function ModelForm({ productId, model }: { productId: string; model?: ModelRow }) {
+function ModelForm({ productId, model, companyId }: { productId: string; model?: ModelRow; companyId: string }) {
   const [photo, setPhoto] = useState<string | null>(model?.photo_url ?? null)
   return (
     <form action={saveModel} className="space-y-2 rounded border p-3">
@@ -22,18 +22,18 @@ function ModelForm({ productId, model }: { productId: string; model?: ModelRow }
         <Input name="sort_order" type="number" defaultValue={model?.sort_order ?? 0} className="w-16" aria-label="Ordem" />
         <SubmitButton size="sm">{model ? 'Salvar' : 'Adicionar modelo'}</SubmitButton>
       </div>
-      <PhotoUpload folder="modelos" value={photo} onChange={setPhoto} />
+      <PhotoUpload folder={`${companyId}/modelos`} value={photo} onChange={setPhoto} />
     </form>
   )
 }
 
-export function ModelEditor({ productId, models }: { productId: string; models: ModelRow[] }) {
+export function ModelEditor({ productId, models, companyId }: { productId: string; models: ModelRow[]; companyId: string }) {
   return (
     <section className="space-y-3">
       <h2 className="font-semibold">Modelos (galeria para o cliente)</h2>
       {models.map(m => (
         <div key={m.id} className="space-y-1">
-          <ModelForm productId={productId} model={m} />
+          <ModelForm productId={productId} model={m} companyId={companyId} />
           <form action={deleteModel}>
             <input type="hidden" name="product_id" value={productId} />
             <input type="hidden" name="id" value={m.id} />
@@ -41,7 +41,7 @@ export function ModelEditor({ productId, models }: { productId: string; models: 
           </form>
         </div>
       ))}
-      <ModelForm productId={productId} />
+      <ModelForm productId={productId} companyId={companyId} />
     </section>
   )
 }
