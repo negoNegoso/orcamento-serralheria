@@ -10,6 +10,7 @@ import { isValidDeliveryDate } from '@/lib/quotes/delivery'
 
 export interface SaveQuoteInput {
   id?: string
+  clientId: string | null
   customerName: string
   customerPhone: string
   siteAddress: string
@@ -40,6 +41,7 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
     const { subtotal, total } = calcQuoteTotal(snapshots.map(s => s.line_total), input.discount, input.multiplier)
 
     const quoteRow = {
+      client_id: input.clientId,
       customer_name: input.customerName.trim(),
       customer_phone: input.customerPhone.trim(),
       site_address: input.siteAddress.trim(),

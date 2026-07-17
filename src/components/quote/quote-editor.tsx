@@ -11,11 +11,14 @@ import { quoteDisplayFooter, itemDisplayGross } from '@/lib/pricing/display'
 import { buildSnapshot, type ItemSelection, type ItemSnapshot } from '@/lib/pricing/snapshot'
 import { saveQuote } from '@/app/(app)/orcamentos/actions'
 import { ItemForm } from './item-form'
+import { ClientField, type ClientValue } from './client-field'
+import type { ClientHit } from '@/app/(app)/clientes/actions'
 
 export interface ExistingQuote {
   id: string
   customer_name: string
   customer_phone: string
+  client_id: string | null
   site_address: string
   discount: number
   multiplier: number
@@ -27,10 +30,17 @@ export interface ExistingQuote {
   items: ItemSelection[]
 }
 
-export function QuoteEditor({ products, quote }: { products: ProductConfig[]; quote?: ExistingQuote }) {
+export function QuoteEditor({ products, quote, initialClient }: {
+  products: ProductConfig[]
+  quote?: ExistingQuote
+  initialClient?: ClientHit
+}) {
   const router = useRouter()
-  const [customerName, setCustomerName] = useState(quote?.customer_name ?? '')
-  const [customerPhone, setCustomerPhone] = useState(quote?.customer_phone ?? '')
+  const [client, setClient] = useState<ClientValue>({
+    clientId: quote?.client_id ?? initialClient?.id ?? null,
+    name: quote?.customer_name ?? initialClient?.name ?? '',
+    phone: quote?.customer_phone ?? initialClient?.phone ?? '',
+  })
   const [siteAddress, setSiteAddress] = useState(quote?.site_address ?? '')
   const [discountStr, setDiscountStr] = useState(quote?.discount ? String(quote.discount) : '')
   const [multiplierStr, setMultiplierStr] = useState(String(quote?.multiplier ?? 1))
@@ -65,7 +75,8 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
     setSaving(true); setError('')
     const res = await saveQuote({
       id: quote?.id,
-      customerName, customerPhone, siteAddress,
+      clientId: client.clientId,
+      customerName: client.name, customerPhone: client.phone, siteAddress,
       discount: discountStr ? parseDecimal(discountStr) : 0,
       multiplier: Math.max(1, Math.trunc(Number(multiplierStr)) || 1),
       deliveryDate,
@@ -97,10 +108,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
     <div className="space-y-5">
       <section className="space-y-3">
         <h2 className="font-semibold">Cliente</h2>
-        <div className="space-y-1"><Label>Nome *</Label>
-          <Input value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Telefone/WhatsApp</Label>
-          <Input inputMode="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} /></div>
+        <ClientField value={client} onChange={setClient} />
         <div className="space-y-1"><Label>Endereço da obra</Label>
           <Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} /></div>
         <div className="space-y-1"><Label>Data de possível entrega *</Label>
@@ -192,7 +200,7 @@ export function QuoteEditor({ products, quote }: { products: ProductConfig[]; qu
         )}
         {computed.totalError && <p className="text-sm text-red-600">{computed.totalError}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button onClick={onSave} disabled={saving || !computed.allValid || !!computed.totalError || items.length === 0 || !customerName.trim() || !deliveryDate}>
+        <Button onClick={onSave} disabled={saving || !computed.allValid || !!computed.totalError || items.length === 0 || !client.name.trim() || !deliveryDate}>
           {saving ? 'Salvando…' : saved ? 'Salvo!' : 'Salvar orçamento'}
         </Button>
         <p className="text-xs text-muted-foreground">Ao salvar, os preços são recalculados pela tabela atual e congelados no orçamento.</p>
