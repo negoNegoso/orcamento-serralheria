@@ -39,7 +39,8 @@ export function calcItem(input: ItemInput): ItemTotals {
     }
     base = input.basePrice
   }
-  let unit = base + (input.modelSurcharge ?? 0)
+  let unit = base
+  unit += input.modelSurchargeType === 'por_m2' ? (input.modelSurcharge ?? 0) * (areaM2 ?? 0) : (input.modelSurcharge ?? 0)
   for (const opt of input.options) {
     unit += opt.surchargeType === 'por_m2' ? opt.surchargeValue * (areaM2 ?? 0) : opt.surchargeValue
   }

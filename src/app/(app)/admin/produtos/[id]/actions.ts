@@ -70,6 +70,7 @@ export async function saveModel(fd: FormData) {
     name: String(fd.get('name') ?? '').trim(),
     photo_url: String(fd.get('photo_url') ?? '') || null,
     surcharge: parseDecimal(String(fd.get('surcharge') ?? '0')),
+    surcharge_type: String(fd.get('surcharge_type') ?? 'fixo') === 'por_m2' ? 'por_m2' : 'fixo',
     sort_order: Number(fd.get('sort_order') ?? 0),
     active: fd.get('active') === 'on',
     company_id: company.id,

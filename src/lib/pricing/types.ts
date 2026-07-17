@@ -20,6 +20,7 @@ export interface ItemInput {
   qty: number
   options: SelectedOption[]
   modelSurcharge?: number
+  modelSurchargeType?: SurchargeType
   /** ajuste livre em R$ aplicado uma vez na linha (positivo ou negativo) */
   extraValue?: number | null
 }

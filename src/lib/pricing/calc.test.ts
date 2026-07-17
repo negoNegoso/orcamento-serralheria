@@ -43,6 +43,10 @@ describe('calcItem por m²', () => {
     expect(r.unitTotal).toBe(420)
     expect(r.lineTotal).toBe(1260)
   })
+  it('adicional do modelo por m² multiplica pela área', () => {
+    const r = calcItem(m2Item({ modelSurcharge: 50, modelSurchargeType: 'por_m2' }))
+    expect(r.unitTotal).toBe(450) // 300 + 50×3
+  })
   it('rejeita medidas ausentes ou zero', () => {
     expect(() => calcItem(m2Item({ widthM: 0 }))).toThrow(PricingError)
     expect(() => calcItem(m2Item({ heightM: null }))).toThrow(PricingError)
