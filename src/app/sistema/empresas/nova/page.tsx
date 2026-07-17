@@ -1,6 +1,11 @@
+import { createServerSupabase } from '@/lib/supabase/server'
+import { BusinessAreaInput } from '@/components/business-area-input'
 import { createCompany } from '../actions'
 
-export default function NovaEmpresaPage() {
+export default async function NovaEmpresaPage() {
+  const supabase = await createServerSupabase()
+  const { data } = await supabase.from('business_areas').select('name').order('name')
+  const areas = (data ?? []).map((a) => a.name as string)
   return (
     <form action={createCompany} className="max-w-md space-y-3">
       <h2 className="text-lg font-semibold">Nova empresa</h2>
@@ -18,7 +23,7 @@ export default function NovaEmpresaPage() {
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Área de atuação</span>
-        <input name="business_area" required placeholder="Ex.: Serralheria, Vidraçaria" className="w-full rounded border px-3 py-2" />
+        <BusinessAreaInput areas={areas} required />
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Cor destaque</span>

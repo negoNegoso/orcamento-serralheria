@@ -1,17 +1,20 @@
 import { notFound } from 'next/navigation'
 import { createServerSupabase } from '@/lib/supabase/server'
+import { BusinessAreaInput } from '@/components/business-area-input'
 import { updateCompany } from '../actions'
 import type { Company } from '@/lib/tenant'
 
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabase()
-  const [{ data: company }, { data: users }] = await Promise.all([
+  const [{ data: company }, { data: users }, { data: areasData }] = await Promise.all([
     supabase.from('companies').select('*').eq('id', id).single(),
     supabase.from('profiles').select('id, name, email, role, active').eq('company_id', id).order('name'),
+    supabase.from('business_areas').select('name').order('name'),
   ])
   if (!company) notFound()
   const c = company as Company
+  const areas = (areasData ?? []).map((a) => a.name as string)
   return (
     <div className="space-y-6">
       <form action={updateCompany} className="max-w-md space-y-3">
@@ -31,7 +34,7 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
         </label>
         <label className="block space-y-1">
           <span className="text-sm font-medium">Área de atuação</span>
-          <input name="business_area" defaultValue={c.business_area} required className="w-full rounded border px-3 py-2" />
+          <BusinessAreaInput areas={areas} defaultValue={c.business_area} required />
         </label>
         <label className="block space-y-1">
           <span className="text-sm font-medium">Cor destaque</span>
