@@ -25,6 +25,12 @@ export function effectiveCompanyId(p: TenantProfile): string | null {
   return p.role === 'admin_system' ? p.acting_company_id : p.company_id
 }
 
+export function isCompanyAdmin(p: TenantProfile): boolean {
+  if (p.role === 'admin') return p.company_id != null
+  if (p.role === 'admin_system') return p.acting_company_id != null
+  return false
+}
+
 export function resolveAccess(p: TenantProfile, company: Company | null): 'ok' | 'sistema' | 'suspensa' {
   if (p.role === 'admin_system') return effectiveCompanyId(p) ? 'ok' : 'sistema'
   if (!company || company.status === 'suspensa') return 'suspensa'
