@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Produção', href: '/producao', icon: 'precision_manufacturing' },
   { label: 'Clientes', href: '/clientes', icon: 'contacts' },
   { label: 'Produtos', href: '/admin/produtos', icon: 'inventory_2', adminOnly: true },
+  { label: 'Templates', href: '/admin/templates', icon: 'dashboard_customize', adminOnly: true },
   { label: 'Pagamento', href: '/admin/pagamento', icon: 'payments', adminOnly: true },
   { label: 'Empresa', href: '/admin/empresa', icon: 'apartment', adminOnly: true },
   { label: 'Usuários', href: '/admin/usuarios', icon: 'group', adminOnly: true },
