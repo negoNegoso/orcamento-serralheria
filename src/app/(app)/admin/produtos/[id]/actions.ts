@@ -89,3 +89,81 @@ export async function deleteModel(fd: FormData) {
   if (error) throw new Error(error.message)
   reval(fd)
 }
+
+export async function applyTemplate(fd: FormData) {
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
+  const templateId = String(fd.get('template_id') ?? '')
+  const productId = String(fd.get('product_id') ?? '')
+  if (!templateId) throw new Error('Template não informado')
+  const { data: tpl, error: tplError } = await supabase
+    .from('option_group_templates')
+    .select('*, option_templates(*)')
+    .eq('id', templateId)
+    .single()
+  if (tplError || !tpl) throw new Error('Template não encontrado')
+  const { data: group, error: groupError } = await supabase
+    .from('option_groups')
+    .insert({
+      product_type_id: productId,
+      name: tpl.name,
+      required: tpl.required,
+      sort_order: 0,
+      company_id: company.id,
+    })
+    .select('id')
+    .single()
+  if (groupError || !group) throw new Error(groupError?.message ?? 'Falha ao criar grupo')
+  const options = (tpl.option_templates ?? []).map((o: { label: string; surcharge_type: string; surcharge_value: number; sort_order: number }) => ({
+    group_id: group.id,
+    label: o.label,
+    surcharge_type: o.surcharge_type,
+    surcharge_value: o.surcharge_value,
+    sort_order: o.sort_order,
+    active: true,
+    company_id: company.id,
+  }))
+  if (options.length > 0) {
+    const { error: optError } = await supabase.from('options').insert(options)
+    if (optError) {
+      await supabase.from('option_groups').delete().eq('id', group.id)
+      throw new Error(optError.message)
+    }
+  }
+  reval(fd)
+}
+
+export async function saveGroupAsTemplate(fd: FormData) {
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
+  const groupId = String(fd.get('group_id') ?? '')
+  const { data: group, error: groupError } = await supabase
+    .from('option_groups')
+    .select('*, options(*)')
+    .eq('id', groupId)
+    .single()
+  if (groupError || !group) throw new Error('Grupo não encontrado')
+  const { data: tpl, error: tplError } = await supabase
+    .from('option_group_templates')
+    .insert({ name: group.name, required: group.required, company_id: company.id })
+    .select('id')
+    .single()
+  if (tplError || !tpl) throw new Error(tplError?.message ?? 'Falha ao criar template')
+  const options = (group.options ?? []).map((o: { label: string; surcharge_type: string; surcharge_value: number; sort_order: number }) => ({
+    template_id: tpl.id,
+    label: o.label,
+    surcharge_type: o.surcharge_type,
+    surcharge_value: o.surcharge_value,
+    sort_order: o.sort_order,
+    company_id: company.id,
+  }))
+  if (options.length > 0) {
+    const { error: optError } = await supabase.from('option_templates').insert(options)
+    if (optError) {
+      await supabase.from('option_group_templates').delete().eq('id', tpl.id)
+      throw new Error(optError.message)
+    }
+  }
+  revalidatePath('/admin/templates')
+  reval(fd)
+}
