@@ -7,7 +7,11 @@ import type { NavItem } from '@/lib/nav/items'
 
 export function MobileNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname()
-  const main = items.slice(0, 4)
+  const mobileOrder = ['/admin/dashboard', '/', '/admin/produtos', '/clientes', '/admin/templates']
+  const main = mobileOrder
+    .map((href) => items.find((i) => i.href === href))
+    .filter((i): i is NavItem => Boolean(i))
+    .slice(0, 5)
   return (
     <>
       <nav className="no-print fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-border bg-card px-2 py-2 md:hidden">
