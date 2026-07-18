@@ -36,3 +36,18 @@ export interface ProductConfig {
   option_groups: OptionGroupRow[]
   models: ModelRow[]
 }
+
+export interface OptionTemplateRow {
+  id: string
+  label: string
+  surcharge_type: 'fixo' | 'por_m2'
+  surcharge_value: number
+  sort_order: number
+}
+
+export interface GroupTemplateRow {
+  id: string
+  name: string
+  required: boolean
+  option_templates: OptionTemplateRow[]
+}
