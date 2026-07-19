@@ -34,4 +34,8 @@ describe('isValidEmail', () => {
     expect(isValidEmail('a@b')).toBe(false)
     expect(isValidEmail('a b@c.com')).toBe(false)
   })
+  it('rejeita múltiplos @ e ponto logo após @', () => {
+    expect(isValidEmail('a@b@c.com')).toBe(false)
+    expect(isValidEmail('a@.b.com')).toBe(false)
+  })
 })

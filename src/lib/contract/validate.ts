@@ -36,5 +36,5 @@ export function isValidCpfCnpj(value: string): boolean {
 
 /** Validação básica de e-mail (formato x@y.z, sem espaços). */
 export function isValidEmail(value: string): boolean {
-  return /^\S+@\S+\.\S+$/.test(value)
+  return /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(value)
 }
