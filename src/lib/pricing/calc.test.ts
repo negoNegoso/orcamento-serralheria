@@ -56,6 +56,38 @@ describe('calcItem por m²', () => {
   })
 })
 
+describe('calcItem m² direto (metragem digitada)', () => {
+  const direto = (over: Partial<ItemInput> = {}): ItemInput => ({
+    pricingMode: 'm2_direto', pricePerM2: 100, areaInputM2: 3,
+    qty: 1, options: [], ...over,
+  })
+  it('base = metragem × preço/m²', () => {
+    const r = calcItem(direto())
+    expect(r.areaM2).toBe(3)
+    expect(r.unitBasePrice).toBe(300)
+    expect(r.unitTotal).toBe(300)
+    expect(r.lineTotal).toBe(300)
+  })
+  it('arredonda metragem digitada para 2 casas', () => {
+    expect(calcItem(direto({ areaInputM2: 3.456 })).areaM2).toBe(3.46)
+  })
+  it('adicional por m² multiplica pela metragem digitada', () => {
+    const r = calcItem(direto({ options: [{ group: 'Vidro', label: 'Fumê', surchargeType: 'por_m2', surchargeValue: 50 }] }))
+    expect(r.unitTotal).toBe(450) // 300 + 50×3
+  })
+  it('adicional do modelo por m² multiplica pela metragem', () => {
+    const r = calcItem(direto({ modelSurcharge: 50, modelSurchargeType: 'por_m2' }))
+    expect(r.unitTotal).toBe(450)
+  })
+  it('rejeita metragem ausente ou zero', () => {
+    expect(() => calcItem(direto({ areaInputM2: 0 }))).toThrow(PricingError)
+    expect(() => calcItem(direto({ areaInputM2: null }))).toThrow(PricingError)
+  })
+  it('rejeita produto sem preço por m² configurado', () => {
+    expect(() => calcItem(direto({ pricePerM2: null }))).toThrow(PricingError)
+  })
+})
+
 describe('calcItem fixo', () => {
   const fixo = (over: Partial<ItemInput> = {}): ItemInput => ({
     pricingMode: 'fixo', basePrice: 1800, qty: 1, options: [], ...over,

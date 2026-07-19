@@ -44,6 +44,7 @@ const sel = (over: Partial<ItemSelection> = {}): ItemSelection => ({
   optionIds: ['o1'],
   widthM: 2,
   heightM: 1.5,
+  areaM2: null,
   manualPrice: null,
   qty: 1,
   extraValue: null,
@@ -112,5 +113,26 @@ describe('buildSnapshot', () => {
     const s = buildSnapshot(portao, sel())
     expect(s.extra_value).toBe(0)
     expect(s.note).toBe('')
+  })
+  it('produto m2_direto usa metragem digitada, sem largura/altura', () => {
+    const tela: ProductConfig = {
+      id: 'p3',
+      name: 'Tela Mosquiteira',
+      pricing_mode: 'm2_direto',
+      price_per_m2: 80,
+      base_price: null,
+      active: true,
+      sort_order: 0,
+      option_groups: [],
+      models: [],
+    }
+    const s = buildSnapshot(tela, sel({ productTypeId: 'p3', optionIds: [], widthM: 2, heightM: 1.5, areaM2: 2.5 }))
+    expect(s.area_m2).toBe(2.5)
+    expect(s.width_m).toBeNull()
+    expect(s.height_m).toBeNull()
+    expect(s.unit_base_price).toBe(200) // 2.5 × 80
+    expect(s.line_total).toBe(200)
+    expect(() => buildSnapshot(tela, sel({ productTypeId: 'p3', optionIds: [], areaM2: null })))
+      .toThrow(PricingError)
   })
 })

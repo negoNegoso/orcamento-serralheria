@@ -28,7 +28,7 @@ export interface ModelRow {
 export interface ProductConfig {
   id: string
   name: string
-  pricing_mode: 'm2' | 'fixo' | 'manual'
+  pricing_mode: 'm2' | 'm2_direto' | 'fixo' | 'manual'
   price_per_m2: number | null
   base_price: number | null
   active: boolean

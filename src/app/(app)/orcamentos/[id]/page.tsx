@@ -39,6 +39,8 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
       optionIds: (it.selected_options as any[]).map(o => o.optionId).filter(Boolean),
       widthM: it.width_m != null ? Number(it.width_m) : null,
       heightM: it.height_m != null ? Number(it.height_m) : null,
+      // usado só quando o produto é m2_direto (metragem digitada); nos demais modos é ignorado
+      areaM2: it.area_m2 != null ? Number(it.area_m2) : null,
       // usado só quando o produto é de preço manual (unit_base_price = valor digitado)
       manualPrice: Number(it.unit_base_price),
       qty: it.qty,

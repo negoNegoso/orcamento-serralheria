@@ -15,14 +15,14 @@ export default async function ProdutosPage({ searchParams }: {
   const { data: products } = await query
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Produtos</h1>
+      <h1 className="text-xl font-bold">Preços</h1>
       <ul className="space-y-2">
         {(products ?? []).map(p => (
           <li key={p.id} className="flex items-center justify-between rounded border p-3">
             <div>
               <Link href={`/admin/produtos/${p.id}`} className="font-medium underline">{p.name}</Link>
               <p className="text-sm text-muted-foreground">
-                {p.pricing_mode === 'm2' && `${formatBRL(p.price_per_m2 ?? 0)}/m²`}
+                {(p.pricing_mode === 'm2' || p.pricing_mode === 'm2_direto') && `${formatBRL(p.price_per_m2 ?? 0)}/m²`}
                 {p.pricing_mode === 'fixo' && formatBRL(p.base_price ?? 0)}
                 {p.pricing_mode === 'manual' && 'Sob consulta'}
                 {!p.active && ' · inativo'}
