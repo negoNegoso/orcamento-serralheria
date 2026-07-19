@@ -20,6 +20,7 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
   const [modelId, setModelId] = useState<string | null>(initial?.modelId ?? null)
   const [width, setWidth] = useState(initial?.widthM?.toString() ?? '')
   const [height, setHeight] = useState(initial?.heightM?.toString() ?? '')
+  const [areaStr, setAreaStr] = useState(initial?.areaM2?.toString() ?? '')
   const [manualStr, setManualStr] = useState(initial?.manualPrice?.toString() ?? '')
   const [extraStr, setExtraStr] = useState(initial?.extraValue?.toString() ?? '')
   const [note, setNote] = useState(initial?.note ?? '')
@@ -36,11 +37,12 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
     optionIds,
     widthM: width ? parseDecimal(width) : null,
     heightM: height ? parseDecimal(height) : null,
+    areaM2: areaStr ? parseDecimal(areaStr) : null,
     manualPrice: manualStr ? parseDecimal(manualStr) : null,
     qty,
     extraValue: extraStr.trim() ? parseDecimal(extraStr) : null,
     note,
-  }), [productId, modelId, optionIds, width, height, manualStr, qty, extraStr, note])
+  }), [productId, modelId, optionIds, width, height, areaStr, manualStr, qty, extraStr, note])
 
   const preview = useMemo((): { snap: ItemSnapshot } | { error: string } => {
     if (!product) return { error: 'Escolha um produto' }
@@ -65,7 +67,7 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
         </select>
       </div>
 
-      {product.pricing_mode !== 'fixo' && (
+      {(product.pricing_mode === 'm2' || product.pricing_mode === 'manual') && (
         <div className="flex gap-2">
           <div className="space-y-1 flex-1">
             <Label>Largura (m){product.pricing_mode === 'manual' && ' — opcional'}</Label>
@@ -75,6 +77,13 @@ export function ItemForm({ products, initial, onConfirm, onCancel }: {
             <Label>Altura (m){product.pricing_mode === 'manual' && ' — opcional'}</Label>
             <Input inputMode="decimal" value={height} onChange={e => setHeight(e.target.value)} placeholder="2,10" />
           </div>
+        </div>
+      )}
+
+      {product.pricing_mode === 'm2_direto' && (
+        <div className="space-y-1">
+          <Label>Metragem (m²)</Label>
+          <Input inputMode="decimal" value={areaStr} onChange={e => setAreaStr(e.target.value)} placeholder="5,25" />
         </div>
       )}
 
