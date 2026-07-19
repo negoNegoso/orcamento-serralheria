@@ -24,6 +24,15 @@ export function calcItem(input: ItemInput): ItemTotals {
     }
     areaM2 = round2(input.widthM * input.heightM)
     base = areaM2 * input.pricePerM2
+  } else if (input.pricingMode === 'm2_direto') {
+    if (!input.areaInputM2 || input.areaInputM2 <= 0) {
+      throw new PricingError('Informe a metragem (m²) maior que zero')
+    }
+    if (input.pricePerM2 == null || input.pricePerM2 < 0) {
+      throw new PricingError('Produto sem preço por m² configurado')
+    }
+    areaM2 = round2(input.areaInputM2)
+    base = areaM2 * input.pricePerM2
   } else if (input.pricingMode === 'manual') {
     if (input.manualPrice == null || input.manualPrice < 0) {
       throw new PricingError('Informe o valor do item (produto orçado pela responsável)')
