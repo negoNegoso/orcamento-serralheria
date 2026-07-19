@@ -1,6 +1,7 @@
 import { formatBRL } from '@/lib/format'
 import { quoteDisplayFooter } from '@/lib/pricing/display'
 import { ItemsCards } from './items-cards'
+import { ItemsTable } from './items-table'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 export function QuotePresentation({ company, quote, items, conditions, internal = false }: {
@@ -37,7 +38,9 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
         )}
       </section>
 
-      <ItemsCards items={items} internal={internal} />
+      {company?.presentation_style === 'tabela'
+        ? <ItemsTable items={items} internal={internal} />
+        : <ItemsCards items={items} internal={internal} />}
 
       <section className="space-y-1 border-t pt-3 text-right">
         {footer.hasDeduction && (
