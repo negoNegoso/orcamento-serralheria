@@ -15,7 +15,7 @@ export default async function ProdutosPage({ searchParams }: {
   const { data: products } = await query
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Produtos</h1>
+      <h1 className="text-xl font-bold">Preços</h1>
       <ul className="space-y-2">
         {(products ?? []).map(p => (
           <li key={p.id} className="flex items-center justify-between rounded border p-3">
@@ -34,7 +34,7 @@ export default async function ProdutosPage({ searchParams }: {
           </li>
         ))}
       </ul>
-      <h2 className="font-semibold">Novo produto</h2>
+      <h2 className="font-semibold">Novo preço</h2>
       <ProductForm action={saveProduct} />
     </div>
   )
