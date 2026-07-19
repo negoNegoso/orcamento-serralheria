@@ -9,6 +9,7 @@ export async function saveCompany(formData: FormData) {
   if (!company) throw new Error('Sem empresa ativa')
   const accent = String(formData.get('accent_color') ?? '').toLowerCase()
   if (!isValidHexColor(accent)) throw new Error('Cor inválida')
+  const style = String(formData.get('presentation_style') ?? '')
   const { error } = await supabase.from('companies').update({
     name: String(formData.get('name') ?? ''),
     cnpj: String(formData.get('cnpj') ?? ''),
@@ -22,6 +23,7 @@ export async function saveCompany(formData: FormData) {
     signature_url: String(formData.get('signature_url') ?? '') || null,
     accent_color: accent,
     business_area: normalizeAreaName(String(formData.get('business_area') ?? '')) || 'Serralheria',
+    presentation_style: ['cards', 'tabela'].includes(style) ? style : 'cards',
   }).eq('id', company.id)
   if (error) throw new Error(error.message)
   const area = normalizeAreaName(String(formData.get('business_area') ?? ''))
