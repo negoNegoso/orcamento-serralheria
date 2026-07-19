@@ -8,6 +8,8 @@ export interface ItemSelection {
   optionIds: string[]
   widthM: number | null
   heightM: number | null
+  /** metragem (m²) digitada — só para produto m2_direto */
+  areaM2: number | null
   /** valor combinado — só para produto de preço manual */
   manualPrice: number | null
   qty: number
@@ -69,6 +71,7 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     pricingMode: product.pricing_mode,
     pricePerM2: product.price_per_m2,
     basePrice: product.base_price,
+    areaInputM2: sel.areaM2,
     manualPrice: sel.manualPrice,
     widthM: sel.widthM,
     heightM: sel.heightM,
@@ -79,7 +82,7 @@ export function buildSnapshot(product: ProductConfig, sel: ItemSelection): ItemS
     extraValue: sel.extraValue,
   })
 
-  const keepDims = product.pricing_mode !== 'fixo' // m2 obrigatório; manual opcional-informativo
+  const keepDims = product.pricing_mode === 'm2' || product.pricing_mode === 'manual' // m2 obrigatório; manual opcional-informativo; m2_direto/fixo sem medidas
   return {
     product_type_id: product.id,
     product_name: product.name,
