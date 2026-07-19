@@ -1,0 +1,30 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { getProfile } from '@/lib/auth'
+import { contractPdfTitle } from '@/lib/contract/text'
+import { ContractFlow } from './contract-flow'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const { supabase } = await getProfile()
+  const { data } = await supabase.from('quotes').select('customer_name').eq('id', id).single()
+  return { title: data ? contractPdfTitle(data.customer_name, new Date()) : 'Contrato' }
+}
+
+export default async function ContratoPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const { supabase } = await getProfile()
+  const { data: quote } = await supabase.from('quotes').select('*, quote_items(*)').eq('id', id).single()
+  if (!quote) notFound()
+  const { data: company } = await supabase.from('companies').select('*').eq('id', quote.company_id).single()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items = [...(quote.quote_items as any[])].sort((a, b) => a.sort_order - b.sort_order)
+  return (
+    <div className="space-y-4">
+      <div className="no-print flex items-center gap-2">
+        <Link href={`/orcamentos/${id}`} className="text-sm underline">← Voltar</Link>
+      </div>
+      <ContractFlow company={company} quote={quote} items={items} />
+    </div>
+  )
+}
