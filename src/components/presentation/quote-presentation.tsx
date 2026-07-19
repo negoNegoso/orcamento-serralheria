@@ -43,7 +43,11 @@ export function QuotePresentation({ company, quote, items, conditions, internal 
             <div className="flex-1 text-sm">
               <p className="font-semibold">{it.product_name}{it.model_name && ` — ${it.model_name}`}</p>
               {it.area_m2 != null && (
-                <p className="text-muted-foreground">{Number(it.width_m).toLocaleString('pt-BR')} × {Number(it.height_m).toLocaleString('pt-BR')} m ({Number(it.area_m2).toLocaleString('pt-BR')} m²)</p>
+                <p className="text-muted-foreground">
+                  {it.width_m != null
+                    ? `${Number(it.width_m).toLocaleString('pt-BR')} × ${Number(it.height_m).toLocaleString('pt-BR')} m (${Number(it.area_m2).toLocaleString('pt-BR')} m²)`
+                    : `${Number(it.area_m2).toLocaleString('pt-BR')} m²`}
+                </p>
               )}
               {(it.selected_options as any[]).length > 0 && (
                 <p className="text-muted-foreground">{(it.selected_options as any[]).map(o => o.label).join(' · ')}</p>

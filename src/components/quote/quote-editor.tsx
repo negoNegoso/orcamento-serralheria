@@ -136,7 +136,9 @@ export function QuoteEditor({ products, quote, initialClient }: {
                   : <div className="text-sm">
                       <p className="font-medium">{s.product_name}{s.model_name && ` — ${s.model_name}`}</p>
                       <p className="text-muted-foreground">
-                        {s.area_m2 != null && `${s.width_m} × ${s.height_m} m (${s.area_m2} m²) · `}
+                        {s.area_m2 != null && (s.width_m != null
+                          ? `${s.width_m} × ${s.height_m} m (${s.area_m2} m²) · `
+                          : `${s.area_m2} m² · `)}
                         {s.selected_options.map(o => o.label).join(', ')}
                         {s.qty > 1 && ` · ${s.qty}un`}
                       </p>
