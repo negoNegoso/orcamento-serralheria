@@ -7,24 +7,24 @@ export function ItemsTable({ items, internal }: { items: any[]; internal: boolea
   const hasQty = items.some(it => Number(it.qty) > 1)
   return (
     <section>
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full border-collapse border border-border text-sm [print-color-adjust:exact] [-webkit-print-color-adjust:exact]">
         <thead>
-          <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-            {hasPhoto && <th className="w-14 py-2 pr-2" aria-label="Foto" />}
-            <th className="py-2 pr-2 font-medium">Descrição</th>
-            {hasQty && <th className="w-12 py-2 pr-2 text-center font-medium">Qtd</th>}
-            <th className="py-2 text-right font-medium">Valor</th>
+          <tr className="bg-muted text-left text-xs uppercase text-foreground">
+            {hasPhoto && <th className="w-14 border border-border px-2 py-2 font-semibold" aria-label="Foto" />}
+            <th className="border border-border px-2 py-2 font-semibold">Descrição</th>
+            {hasQty && <th className="w-12 border border-border px-2 py-2 text-center font-semibold">Qtd</th>}
+            <th className="border border-border px-2 py-2 text-right font-semibold">Valor</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody>
           {items.map((it, i) => (
-            <tr key={i} className="align-top">
+            <tr key={i} className="align-top even:bg-muted/40">
               {hasPhoto && (
-                <td className="py-2 pr-2">
+                <td className="border border-border px-2 py-2">
                   {it.model_photo_url && <img src={it.model_photo_url} alt="" className="h-12 w-12 rounded object-cover" />}
                 </td>
               )}
-              <td className="py-2 pr-2">
+              <td className="border border-border px-2 py-2">
                 <p className="font-semibold">{it.product_name}{it.model_name && ` — ${it.model_name}`}</p>
                 {it.area_m2 != null && (
                   <p className="text-muted-foreground">
@@ -43,8 +43,8 @@ export function ItemsTable({ items, internal }: { items: any[]; internal: boolea
                 )}
                 {it.note && <p className="whitespace-pre-line italic text-muted-foreground">{it.note}</p>}
               </td>
-              {hasQty && <td className="py-2 pr-2 text-center">{it.qty}</td>}
-              <td className="whitespace-nowrap py-2 text-right font-semibold">
+              {hasQty && <td className="border border-border px-2 py-2 text-center">{it.qty}</td>}
+              <td className="whitespace-nowrap border border-border px-2 py-2 text-right font-semibold">
                 {formatBRL(itemDisplayGross(Number(it.line_total), Number(it.extra_value ?? 0)))}
               </td>
             </tr>
