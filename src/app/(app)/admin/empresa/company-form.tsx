@@ -43,6 +43,13 @@ export function CompanyForm({ settings, action, areas }: { settings: any; action
       <div className="space-y-2"><Label htmlFor="default_validity_days">Validade padrão do orçamento (dias)</Label>
         <Input id="default_validity_days" name="default_validity_days" type="number" min={1}
           defaultValue={settings?.default_validity_days ?? 15} /></div>
+      <div className="space-y-2"><Label htmlFor="presentation_style">Estilo de apresentação do orçamento</Label>
+        <select id="presentation_style" name="presentation_style" defaultValue={settings?.presentation_style ?? 'cards'}
+          className="block rounded border bg-background p-2 text-sm">
+          <option value="cards">Cards (padrão)</option>
+          <option value="tabela">Tabela</option>
+        </select>
+        <span className="block text-xs text-muted-foreground">Como os itens aparecem na tela, no link público e no PDF.</span></div>
       <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
     </form>
   )
