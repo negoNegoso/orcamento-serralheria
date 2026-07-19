@@ -9,15 +9,18 @@ import type { ConsumerData, ContractTerms } from '@/lib/contract/types'
 
 export interface ContractFormErrors {
   name?: string; doc?: string; address?: string; email?: string
+  paymentTerms?: string; deadlineText?: string
 }
 
 /** Valida o formulário; retorna mapa de erros vazio quando tudo ok. */
-export function validateContractForm(consumer: ConsumerData): ContractFormErrors {
+export function validateContractForm(consumer: ConsumerData, terms: ContractTerms): ContractFormErrors {
   const errors: ContractFormErrors = {}
   if (!consumer.name.trim()) errors.name = 'Informe o nome completo.'
   if (!isValidCpfCnpj(consumer.doc)) errors.doc = 'CPF/CNPJ inválido.'
   if (!consumer.address.trim()) errors.address = 'Informe o endereço completo.'
   if (consumer.email.trim() && !isValidEmail(consumer.email)) errors.email = 'E-mail inválido.'
+  if (!terms.paymentTerms.trim()) errors.paymentTerms = 'Informe as condições de pagamento.'
+  if (!terms.deadlineText.trim()) errors.deadlineText = 'Informe o prazo de execução.'
   return errors
 }
 
@@ -42,7 +45,7 @@ export function ContractForm({ consumer, terms, companyCnpjMissing, errors, onCh
 }) {
   const set = (patch: Partial<ConsumerData>) => onChange({ ...consumer, ...patch })
   const setTerms = (patch: Partial<ContractTerms>) => onChangeTerms({ ...terms, ...patch })
-  const valid = Object.keys(validateContractForm(consumer)).length === 0
+  const valid = Object.keys(validateContractForm(consumer, terms)).length === 0
 
   return (
     <form className="space-y-6" onSubmit={e => { e.preventDefault(); onSubmit() }}>
@@ -88,12 +91,12 @@ export function ContractForm({ consumer, terms, companyCnpjMissing, errors, onCh
 
       <section className="space-y-3">
         <h2 className="font-semibold">Termos do contrato</h2>
-        <Field label="Condições de pagamento *">
+        <Field label="Condições de pagamento *" error={errors.paymentTerms}>
           <Textarea rows={3} value={terms.paymentTerms}
             placeholder="Ex.: Entrada de R$ 2.000,00 via PIX na assinatura; saldo em 2 parcelas de R$ 1.500,00."
             onChange={e => setTerms({ paymentTerms: e.target.value })} />
         </Field>
-        <Field label="Prazo de execução *">
+        <Field label="Prazo de execução *" error={errors.deadlineText}>
           <Textarea rows={2} value={terms.deadlineText}
             onChange={e => setTerms({ deadlineText: e.target.value })} />
         </Field>
@@ -103,7 +106,7 @@ export function ContractForm({ consumer, terms, companyCnpjMissing, errors, onCh
           </Field>
           <Field label="Multa de rescisão (%)">
             <Input type="number" min={0} max={100} value={terms.penaltyPercent}
-              onChange={e => setTerms({ penaltyPercent: Number(e.target.value) })} />
+              onChange={e => setTerms({ penaltyPercent: Number(e.target.value) || 0 })} />
           </Field>
         </div>
       </section>

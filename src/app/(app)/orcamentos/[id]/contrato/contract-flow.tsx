@@ -28,10 +28,10 @@ export function ContractFlow({ company, quote, items }: { company: any; quote: a
     return (
       <ContractForm consumer={consumer} terms={terms} errors={errors}
         companyCnpjMissing={!company?.cnpj}
-        onChange={c => { setConsumer(c); setErrors(validateContractForm(c)) }}
-        onChangeTerms={setTerms}
+        onChange={c => { setConsumer(c); setErrors(validateContractForm(c, terms)) }}
+        onChangeTerms={t => { setTerms(t); setErrors(validateContractForm(consumer, t)) }}
         onSubmit={() => {
-          const errs = validateContractForm(consumer)
+          const errs = validateContractForm(consumer, terms)
           setErrors(errs)
           if (Object.keys(errs).length === 0) setStep('preview')
         }} />
