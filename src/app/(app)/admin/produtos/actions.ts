@@ -7,11 +7,11 @@ export async function saveProduct(formData: FormData) {
   const { supabase, company } = await getCompany()
   if (!company) throw new Error('Sem empresa ativa')
   const id = String(formData.get('id') ?? '')
-  const mode = String(formData.get('pricing_mode')) as 'm2' | 'fixo' | 'manual'
+  const mode = String(formData.get('pricing_mode')) as 'm2' | 'm2_direto' | 'fixo' | 'manual'
   const row = {
     name: String(formData.get('name') ?? '').trim(),
     pricing_mode: mode,
-    price_per_m2: mode === 'm2' ? parseDecimal(String(formData.get('price_per_m2') ?? '0')) : null,
+    price_per_m2: mode === 'm2' || mode === 'm2_direto' ? parseDecimal(String(formData.get('price_per_m2') ?? '0')) : null,
     base_price: mode === 'fixo' ? parseDecimal(String(formData.get('base_price') ?? '0')) : null,
     active: formData.get('active') === 'on',
     sort_order: Number(formData.get('sort_order') ?? 0),

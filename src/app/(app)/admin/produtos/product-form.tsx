@@ -6,7 +6,7 @@ import { SubmitButton } from '@/components/ui/submit-button'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ProductForm({ product, action }: { product?: any; action: (fd: FormData) => Promise<void> }) {
-  const [mode, setMode] = useState<'m2' | 'fixo' | 'manual'>(product?.pricing_mode ?? 'm2')
+  const [mode, setMode] = useState<'m2' | 'm2_direto' | 'fixo' | 'manual'>(product?.pricing_mode ?? 'm2')
   return (
     <form action={action} className="space-y-3 rounded border p-3">
       {product && <input type="hidden" name="id" value={product.id} />}
@@ -16,14 +16,15 @@ export function ProductForm({ product, action }: { product?: any; action: (fd: F
       </div>
       <div className="space-y-1">
         <Label>Modo de preço</Label>
-        <select name="pricing_mode" value={mode} onChange={e => setMode(e.target.value as 'm2' | 'fixo' | 'manual')}
+        <select name="pricing_mode" value={mode} onChange={e => setMode(e.target.value as 'm2' | 'm2_direto' | 'fixo' | 'manual')}
           className="w-full rounded border bg-background p-2">
           <option value="m2">Por m² (largura × altura)</option>
+          <option value="m2_direto">Por m² (metragem direta)</option>
           <option value="fixo">Preço fixo</option>
           <option value="manual">Sob consulta (vendedor digita o valor no orçamento)</option>
         </select>
       </div>
-      {mode === 'm2' && (
+      {(mode === 'm2' || mode === 'm2_direto') && (
         <div className="space-y-1">
           <Label htmlFor={`ppm2-${product?.id ?? 'new'}`}>Preço por m² (R$)</Label>
           <Input id={`ppm2-${product?.id ?? 'new'}`} name="price_per_m2" inputMode="decimal"
