@@ -34,7 +34,7 @@ export default async function ProdutosPage({ searchParams }: {
           </li>
         ))}
       </ul>
-      <h2 className="font-semibold">Novo preço</h2>
+      <h2 className="font-semibold">Novo produto</h2>
       <ProductForm action={saveProduct} />
     </div>
   )
