@@ -70,8 +70,13 @@ FORNECIMENTO Nº {8 primeiros caracteres do uuid do orçamento, maiúsculos}/{an
 - CONTRATANTE: dados do formulário.
 
 **Cláusulas (template fixo):**
-1. **Objeto** — fornecimento e instalação dos itens conforme tabela (produto, modelo,
-   medidas, qtd, valores) — mesma tabela de itens do orçamento.
+1. **Objeto** — fornecimento e instalação dos itens do orçamento, apresentados
+   **sempre em formato tabular** (independente do estilo de apresentação
+   cards/tabela configurado pela empresa): grade com cabeçalho e colunas
+   Item | Produto/Modelo | Medidas (L×A / m²) | Qtd | Valor unit. | Valor total,
+   com linha de subtotal, desconto (se houver) e total. Estilo visual segue a
+   tabela do orçamento (grade + cabeçalho + zebra, padrão de
+   `src/components/presentation`).
 2. **Preço** — total em número e por extenso; desconto se houver.
 3. **Pagamento** — texto editável do formulário.
 4. **Prazo de execução** — texto/data editável; local de execução (endereço da obra).
