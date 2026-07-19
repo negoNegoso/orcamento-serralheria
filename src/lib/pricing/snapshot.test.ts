@@ -126,7 +126,7 @@ describe('buildSnapshot', () => {
       option_groups: [],
       models: [],
     }
-    const s = buildSnapshot(tela, sel({ productTypeId: 'p3', optionIds: [], widthM: null, heightM: null, areaM2: 2.5 }))
+    const s = buildSnapshot(tela, sel({ productTypeId: 'p3', optionIds: [], widthM: 2, heightM: 1.5, areaM2: 2.5 }))
     expect(s.area_m2).toBe(2.5)
     expect(s.width_m).toBeNull()
     expect(s.height_m).toBeNull()
