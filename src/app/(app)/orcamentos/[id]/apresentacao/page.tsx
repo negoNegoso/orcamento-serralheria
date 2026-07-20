@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { headers } from 'next/headers'
 import { getProfile } from '@/lib/auth'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { applicableConditions } from '@/lib/pricing/payment'
 import { QuotePresentation } from '@/components/presentation/quote-presentation'
 import { ShareBar } from '@/components/quote/share-bar'
-import { formatBRL, quotePdfTitle } from '@/lib/format'
+import { quotePdfTitle } from '@/lib/format'
+import { buildQuoteMessage } from '@/lib/whatsapp-message'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,11 +27,23 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
   ])
   const conditions = applicableConditions(conds ?? [], Number(quote.total))
   const items = [...quote.quote_items].sort((a, b) => a.sort_order - b.sort_order)
-  const hdrs = await headers()
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https'
-  const host = hdrs.get('host') ?? ''
-  const publicUrl = `${proto}://${host}/o/${quote.token}`
-  const fullMessage = `Olá, ${quote.customer_name}! Segue seu orçamento (total ${formatBRL(Number(quote.total))}): ${publicUrl}`
+  const fullMessage = buildQuoteMessage(
+    {
+      customer_name: quote.customer_name,
+      subtotal: Number(quote.subtotal),
+      discount: Number(quote.discount),
+      multiplier: Number(quote.multiplier ?? 1),
+    },
+    items.map(it => ({
+      product_name: it.product_name,
+      model_name: it.model_name,
+      width_m: it.width_m != null ? Number(it.width_m) : null,
+      height_m: it.height_m != null ? Number(it.height_m) : null,
+      qty: Number(it.qty ?? 1),
+      line_total: Number(it.line_total),
+      extra_value: Number(it.extra_value ?? 0),
+    })),
+  )
   return (
     <div className="space-y-4">
       <div className="no-print flex items-center gap-2">
