@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
 import { getProfile } from '@/lib/auth'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { applicableConditions } from '@/lib/pricing/payment'
 import { QuotePresentation } from '@/components/presentation/quote-presentation'
 import { ShareBar } from '@/components/quote/share-bar'
-import { quotePdfTitle } from '@/lib/format'
+import { formatBRL, quotePdfTitle } from '@/lib/format'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -26,13 +27,18 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
   ])
   const conditions = applicableConditions(conds ?? [], Number(quote.total))
   const items = [...quote.quote_items].sort((a, b) => a.sort_order - b.sort_order)
+  const hdrs = await headers()
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https'
+  const host = hdrs.get('host') ?? ''
+  const publicUrl = `${proto}://${host}/o/${quote.token}`
+  const fullMessage = `Olá, ${quote.customer_name}! Segue seu orçamento (total ${formatBRL(Number(quote.total))}): ${publicUrl}`
   return (
     <div className="space-y-4">
       <div className="no-print flex items-center gap-2">
         <Link href={`/orcamentos/${id}`} className="text-sm underline">← Voltar</Link>
         <div className="ml-auto">
           <ShareBar quoteId={quote.id} token={quote.token} customerName={quote.customer_name}
-            total={Number(quote.total)} markSent={quote.status === 'rascunho'} />
+            total={Number(quote.total)} markSent={quote.status === 'rascunho'} fullMessage={fullMessage} />
         </div>
       </div>
       <QuotePresentation company={company} quote={quote} items={items} conditions={conditions} internal={true} />
