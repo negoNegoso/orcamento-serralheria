@@ -7,8 +7,6 @@ import { maskCpfCnpj } from '@/lib/receipt/mask'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 
-const ACCENT = '#00b8e6' // ciano da marca L.D
-
 function EditableInput({ value, onChange, placeholder, className = '', mask }: {
   value: string; onChange: (v: string) => void; placeholder?: string; className?: string
   mask?: (v: string) => string
@@ -48,7 +46,7 @@ export function ReciboDocument({ company, quote, items }: {
     <article className="mx-auto max-w-3xl space-y-6 p-4 text-slate-800 print:p-0">
       {/* Header: card da marca + card do valor */}
       <header className="grid gap-4 sm:grid-cols-2">
-        <div className="flex items-center gap-4 rounded-2xl p-6 text-white" style={{ backgroundColor: ACCENT }}>
+        <div className="flex items-center gap-4 rounded-2xl bg-primary p-6 text-primary-foreground">
           {company?.logo_url && <img src={company.logo_url} alt="" className="h-16 w-16 rounded-lg bg-white/20 object-contain p-1" />}
           <div>
             <p className="text-xl font-bold leading-tight">{company?.name}</p>
@@ -58,7 +56,7 @@ export function ReciboDocument({ company, quote, items }: {
         </div>
         <div className="rounded-2xl bg-muted/50 p-6">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Valor recebido</p>
-          <p className="text-3xl font-bold" style={{ color: ACCENT }}>{formatBRL(total)}</p>
+          <p className="text-3xl font-bold text-primary">{formatBRL(total)}</p>
           <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground no-print">
             <span>Data:</span><input type="date" value={receiptDate} onChange={e => setReceiptDate(e.target.value)}
               className="bg-transparent outline-none" />
@@ -120,7 +118,7 @@ export function ReciboDocument({ company, quote, items }: {
           </>
         )}
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total</p>
-        <p className="text-3xl font-bold" style={{ color: ACCENT }}>{formatBRL(footer.total)}</p>
+        <p className="text-3xl font-bold text-primary">{formatBRL(footer.total)}</p>
       </section>
 
       {/* Recebedor / assinatura */}
