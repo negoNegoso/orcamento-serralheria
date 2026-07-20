@@ -88,6 +88,7 @@ describe('buildQuoteMessage', () => {
     )
     expect(msg).toContain('3 casas × R$\u00a04.050,00')
     expect(msg).toContain('*Total: R$\u00a04.050,00*')
+    expect(msg).toMatch(/casas × R\$\u00a04\.050,00\n\*Total:/)
   })
 
   it('multiplier = 1 (padrão): sem linha "casas"', () => {
