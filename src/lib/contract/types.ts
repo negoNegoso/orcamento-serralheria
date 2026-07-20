@@ -9,6 +9,13 @@ export interface ConsumerData {
   email: string
 }
 
+/** Testemunha do contrato, coletada em tempo de execução — nunca gravada no banco. */
+export interface Witness {
+  name: string
+  /** CPF, mascarado (000.000.000-00) */
+  doc: string
+}
+
 /** Termos editáveis do contrato, pré-preenchidos a partir do orçamento. */
 export interface ContractTerms {
   paymentTerms: string

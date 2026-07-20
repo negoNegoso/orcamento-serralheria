@@ -3,7 +3,7 @@ import { formatBRL } from '@/lib/format'
 import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 import { round2 } from '@/lib/pricing/calc'
 import { valorPorExtenso, contractNumber } from '@/lib/contract/text'
-import type { ConsumerData, ContractTerms } from '@/lib/contract/types'
+import type { ConsumerData, ContractTerms, Witness } from '@/lib/contract/types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 
@@ -26,8 +26,8 @@ function LinhaAssinatura({ label, sub }: { label: string; sub?: string }) {
   )
 }
 
-export function ContractDocument({ company, quote, items, consumer, terms }: {
-  company: any; quote: any; items: any[]; consumer: ConsumerData; terms: ContractTerms
+export function ContractDocument({ company, quote, items, consumer, terms, witnesses }: {
+  company: any; quote: any; items: any[]; consumer: ConsumerData; terms: ContractTerms; witnesses: Witness[]
 }) {
   const footer = quoteDisplayFooter(
     Number(quote.subtotal),
@@ -211,8 +211,10 @@ export function ContractDocument({ company, quote, items, consumer, terms }: {
       <section className="grid gap-2 sm:grid-cols-2">
         <LinhaAssinatura label="CONTRATADA" sub={company?.name} />
         <LinhaAssinatura label="CONTRATANTE" sub={consumer.name} />
-        <LinhaAssinatura label="Testemunha 1" sub="Nome / CPF" />
-        <LinhaAssinatura label="Testemunha 2" sub="Nome / CPF" />
+        {witnesses.map((w, i) => (
+          <LinhaAssinatura key={i} label={`Testemunha ${i + 1}`}
+            sub={w.name ? `${w.name}${w.doc ? ` — CPF ${w.doc}` : ''}` : 'Nome / CPF'} />
+        ))}
       </section>
     </article>
   )

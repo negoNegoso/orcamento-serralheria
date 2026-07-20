@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ContractForm, validateContractForm, type ContractFormErrors } from '@/components/contract/contract-form'
 import { ContractDocument } from '@/components/contract/contract-document'
-import type { ConsumerData, ContractTerms } from '@/lib/contract/types'
+import type { ConsumerData, ContractTerms, Witness } from '@/lib/contract/types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -23,13 +23,19 @@ export function ContractFlow({ company, quote, items }: { company: any; quote: a
     siteAddress: quote.site_address ?? '',
     penaltyPercent: 10,
   })
+  // Testemunhas: dinâmicas e só em memória — nunca gravadas.
+  const [witnesses, setWitnesses] = useState<Witness[]>([
+    { name: '', doc: '' },
+    { name: '', doc: '' },
+  ])
 
   if (step === 'form') {
     return (
-      <ContractForm consumer={consumer} terms={terms} errors={errors}
+      <ContractForm consumer={consumer} terms={terms} witnesses={witnesses} errors={errors}
         companyCnpjMissing={!company?.cnpj}
         onChange={c => { setConsumer(c); setErrors(validateContractForm(c, terms)) }}
         onChangeTerms={t => { setTerms(t); setErrors(validateContractForm(consumer, t)) }}
+        onChangeWitnesses={setWitnesses}
         onSubmit={() => {
           const errs = validateContractForm(consumer, terms)
           setErrors(errs)
@@ -44,7 +50,7 @@ export function ContractFlow({ company, quote, items }: { company: any; quote: a
         <Button variant="outline" onClick={() => setStep('form')}>← Editar dados</Button>
         <Button className="ml-auto" onClick={() => window.print()}>Baixar PDF</Button>
       </div>
-      <ContractDocument company={company} quote={quote} items={items} consumer={consumer} terms={terms} />
+      <ContractDocument company={company} quote={quote} items={items} consumer={consumer} terms={terms} witnesses={witnesses} />
     </div>
   )
 }

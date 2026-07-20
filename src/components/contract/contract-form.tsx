@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { maskCpfCnpj } from '@/lib/receipt/mask'
 import { isValidCpfCnpj, isValidEmail } from '@/lib/contract/validate'
-import type { ConsumerData, ContractTerms } from '@/lib/contract/types'
+import type { ConsumerData, ContractTerms, Witness } from '@/lib/contract/types'
 
 export interface ContractFormErrors {
   name?: string; doc?: string; address?: string; email?: string
@@ -34,17 +34,23 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   )
 }
 
-export function ContractForm({ consumer, terms, companyCnpjMissing, errors, onChange, onChangeTerms, onSubmit }: {
+export function ContractForm({ consumer, terms, witnesses, companyCnpjMissing, errors, onChange, onChangeTerms, onChangeWitnesses, onSubmit }: {
   consumer: ConsumerData
   terms: ContractTerms
+  witnesses: Witness[]
   companyCnpjMissing: boolean
   errors: ContractFormErrors
   onChange: (c: ConsumerData) => void
   onChangeTerms: (t: ContractTerms) => void
+  onChangeWitnesses: (w: Witness[]) => void
   onSubmit: () => void
 }) {
   const set = (patch: Partial<ConsumerData>) => onChange({ ...consumer, ...patch })
   const setTerms = (patch: Partial<ContractTerms>) => onChangeTerms({ ...terms, ...patch })
+  const setWitness = (i: number, patch: Partial<Witness>) =>
+    onChangeWitnesses(witnesses.map((w, j) => (j === i ? { ...w, ...patch } : w)))
+  const addWitness = () => onChangeWitnesses([...witnesses, { name: '', doc: '' }])
+  const removeWitness = (i: number) => onChangeWitnesses(witnesses.filter((_, j) => j !== i))
   const valid = Object.keys(validateContractForm(consumer, terms)).length === 0
 
   return (
@@ -109,6 +115,32 @@ export function ContractForm({ consumer, terms, companyCnpjMissing, errors, onCh
               onChange={e => setTerms({ penaltyPercent: Number(e.target.value) || 0 })} />
           </Field>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold">Testemunhas (opcional)</h2>
+          <Button type="button" variant="outline" size="sm" onClick={addWitness}>+ Adicionar testemunha</Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Deixe em branco para assinar à mão. Estes dados também não ficam salvos no sistema.
+        </p>
+        {witnesses.length === 0 && (
+          <p className="text-sm text-muted-foreground">Nenhuma testemunha adicionada.</p>
+        )}
+        {witnesses.map((w, i) => (
+          <div key={i} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <Field label={`Testemunha ${i + 1} — nome`}>
+              <Input value={w.name} onChange={e => setWitness(i, { name: e.target.value })} />
+            </Field>
+            <Field label="CPF">
+              <Input value={w.doc} inputMode="numeric"
+                onChange={e => setWitness(i, { doc: maskCpfCnpj(e.target.value) })} />
+            </Field>
+            <Button type="button" variant="ghost" size="sm" className="text-red-600"
+              onClick={() => removeWitness(i)}>Remover</Button>
+          </div>
+        ))}
       </section>
 
       <div className="flex items-center gap-3">
