@@ -7,9 +7,9 @@ import type { ConsumerData, ContractTerms, Witness } from '@/lib/contract/types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 
-function Clausula({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Clausula({ titulo, children, avoidBreak = true }: { titulo: string; children: React.ReactNode; avoidBreak?: boolean }) {
   return (
-    <section className="break-inside-avoid">
+    <section className={avoidBreak ? 'break-inside-avoid' : undefined}>
       <h2 className="text-sm font-bold uppercase">{titulo}</h2>
       <div className="mt-1 text-sm leading-relaxed">{children}</div>
     </section>
@@ -73,7 +73,7 @@ export function ContractDocument({ company, quote, items, consumer, terms, witne
       </section>
 
       {/* Cláusula 1 — Objeto, com tabela de itens (sempre tabular) */}
-      <Clausula titulo="Cláusula 1ª — Do Objeto">
+      <Clausula titulo="Cláusula 1ª — Do Objeto" avoidBreak={false}>
         <p>
           O presente contrato tem por objeto o fornecimento e a instalação, pela CONTRATADA,
           dos itens descritos na tabela abaixo, conforme orçamento nº {numero}:
@@ -94,7 +94,7 @@ export function ContractDocument({ company, quote, items, consumer, terms, witne
               const gross = itemDisplayGross(Number(it.line_total), Number(it.extra_value ?? 0))
               const unit = round2(gross / Number(it.qty || 1))
               return (
-                <tr key={i} className="align-top even:bg-muted/40">
+                <tr key={i} className="break-inside-avoid align-top even:bg-muted/40">
                   <td className="border border-border px-2 py-2 text-center">{i + 1}</td>
                   <td className="border border-border px-2 py-2">
                     <p className="font-semibold">{it.product_name}{it.model_name && ` — ${it.model_name}`}</p>
