@@ -86,9 +86,9 @@ describe('buildQuoteMessage', () => {
       { customer_name: 'Carlos', subtotal: 1350, discount: 0, multiplier: 3 },
       [{ product_name: 'Janela', line_total: 1350 }],
     )
-    expect(msg).toContain('3 casas × R$\u00a04.050,00')
+    expect(msg).toContain('3 casas × R$\u00a01.350,00')
     expect(msg).toContain('*Total: R$\u00a04.050,00*')
-    expect(msg).toMatch(/casas × R\$\u00a04\.050,00\n\*Total:/)
+    expect(msg).toMatch(/casas × R\$\u00a01\.350,00\n\*Total:/)
   })
 
   it('multiplier = 1 (padrão): sem linha "casas"', () => {

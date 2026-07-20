@@ -47,7 +47,7 @@ export function buildQuoteMessage(quote: QuoteInput, items: ItemInput[]): string
   })
 
   if (multiplier > 1) {
-    lines.push(`${multiplier} casas × ${formatBRL(footer.total)}`)
+    lines.push(`${multiplier} casas × ${formatBRL(footer.unitTotal)}`)
   }
   lines.push(`*Total: ${formatBRL(footer.total)}*`)
 
