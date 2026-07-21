@@ -9,16 +9,19 @@ import { OwnerSelect } from '@/components/quote/owner-select'
 import { DeleteQuoteButton } from '@/components/quote/delete-quote-button'
 import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
+import { ReceiptsSection } from '@/components/receipt/receipts-section'
 import { setStatus, cloneQuote } from '../actions'
 import type { ItemSelection } from '@/lib/pricing/snapshot'
 
 export default async function OrcamentoDetalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { supabase, user, profile } = await getProfile()
-  const [{ data: quote }, products, { data: activeUsers }] = await Promise.all([
+  const [{ data: quote }, products, { data: activeUsers }, { data: receipts }, { data: fin }] = await Promise.all([
     supabase.from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('id', id).single(),
     fetchProductConfigs(supabase),
     supabase.from('profiles').select('id, name').eq('active', true).order('name'),
+    supabase.from('receipts').select('*').eq('quote_id', id).order('receipt_date', { ascending: false }).order('created_at', { ascending: false }),
+    supabase.from('quote_financials').select('received').eq('quote_id', id).single(),
   ])
   if (!quote) notFound()
 
@@ -76,9 +79,6 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
           <Link href={`/orcamentos/${quote.id}/apresentacao`}>
             <Button type="button" variant="outline" size="sm">Apresentar / Compartilhar</Button>
           </Link>
-          <Link href={`/orcamentos/${quote.id}/recibo`}>
-            <Button type="button" variant="outline" size="sm">Gerar Recibo</Button>
-          </Link>
           <Link href={`/orcamentos/${quote.id}/contrato`}>
             <Button type="button" variant="outline" size="sm">Gerar Contrato</Button>
           </Link>
@@ -100,6 +100,13 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
               users={(activeUsers ?? []) as { id: string; name: string }[]} />
           : <span className="text-muted-foreground">Responsável: {creatorName}</span>}
       </div>
+      <ReceiptsSection
+        quoteId={quote.id}
+        total={Number(quote.total)}
+        received={Number(fin?.received ?? 0)}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        receipts={(receipts ?? []) as any}
+      />
       <QuoteEditor products={products} quote={existing} />
     </div>
   )
