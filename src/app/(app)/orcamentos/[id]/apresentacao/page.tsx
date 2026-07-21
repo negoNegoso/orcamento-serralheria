@@ -32,6 +32,8 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
       customer_name: quote.customer_name,
       subtotal: Number(quote.subtotal),
       discount: Number(quote.discount),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      discount_type: ((quote as any).discount_type ?? 'valor') as 'valor' | 'percent',
       multiplier: Number(quote.multiplier ?? 1),
     },
     items.map(it => ({

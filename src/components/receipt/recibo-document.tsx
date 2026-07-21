@@ -28,6 +28,7 @@ export function ReciboDocument({ company, quote, items }: {
   const total = Number(quote.total)
   const footer = quoteDisplayFooter(
     Number(quote.subtotal),
+    (quote.discount_type ?? 'valor') as 'valor' | 'percent',
     Number(quote.discount),
     items.map(it => Number(it.extra_value ?? 0)),
     Number(quote.multiplier ?? 1),
@@ -108,7 +109,14 @@ export function ReciboDocument({ company, quote, items }: {
         {footer.hasDeduction && (
           <>
             <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(footer.subtotal)}</p>
-            <p className="text-sm text-green-700">Desconto: −{formatBRL(footer.discount)}</p>
+            {footer.itemAdjustment > 0 && (
+              <p className="text-sm text-green-700">Ajuste dos itens: −{formatBRL(footer.itemAdjustment)}</p>
+            )}
+            {footer.discount > 0 && (
+              <p className="text-sm text-green-700">
+                Desconto{footer.discountPercentLabel ? ` (${footer.discountPercentLabel})` : ''}: −{formatBRL(footer.discount)}
+              </p>
+            )}
           </>
         )}
         {footer.multiplier > 1 && (
