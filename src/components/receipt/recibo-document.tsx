@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { formatBRL } from '@/lib/format'
+import { formatBRL, parseDecimal } from '@/lib/format'
 import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 import { receiptDeclaration } from '@/lib/receipt/text'
 import { maskCpfCnpj } from '@/lib/receipt/mask'
@@ -35,7 +35,7 @@ export function ReciboDocument({ company, quote, items, receipt }: {
     items.map(it => Number(it.extra_value ?? 0)),
     Number(quote.multiplier ?? 1),
   )
-  const [amount, setAmount] = useState(String(receipt.amount))
+  const [amount, setAmount] = useState(Number(receipt.amount).toFixed(2).replace('.', ','))
   const [clientDoc, setClientDoc] = useState(receipt.payer_doc ?? '')
   const [receiptDate, setReceiptDate] = useState(receipt.receipt_date)
   const [payment, setPayment] = useState(receipt.payment_method ?? '')
@@ -43,7 +43,7 @@ export function ReciboDocument({ company, quote, items, receipt }: {
   const [receiverDoc, setReceiverDoc] = useState(receipt.receiver_doc || company?.cnpj || '')
   const [receiverMethod, setReceiverMethod] = useState(receipt.receiver_method ?? '')
 
-  const amountNum = Number(amount.replace(/\./g, '').replace(',', '.')) || 0
+  const amountNum = parseDecimal(amount)
   const displayDate = new Date(receiptDate + 'T12:00:00').toLocaleDateString('pt-BR')
 
   return (
