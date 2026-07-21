@@ -64,6 +64,28 @@ export default async function DashboardPage({
         />
       </section>
 
+      {/* Financeiro */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <KpiCard
+          label="Recebido"
+          value={formatBRL(Number(m.financeiro.received_total))}
+          icon="payments"
+          tone="success"
+        />
+        <KpiCard
+          label="A receber (aprovados)"
+          value={formatBRL(Number(m.financeiro.receivable_total))}
+          icon="account_balance_wallet"
+          tone="warning"
+        />
+        <KpiCard
+          label="Em aberto"
+          value={String(m.financeiro.overdue_count)}
+          icon="pending_actions"
+          hint="Aprovados com saldo a receber"
+        />
+      </section>
+
       {/* Funil + A vencer */}
       <section className="grid gap-3 md:grid-cols-2">
         <SectionCard title="Funil por status">
