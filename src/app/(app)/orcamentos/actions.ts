@@ -15,6 +15,7 @@ export interface SaveQuoteInput {
   customerPhone: string
   siteAddress: string
   discount: number
+  discountType: 'valor' | 'percent'
   multiplier: number
   deliveryDate: string
   generalNote: string
@@ -40,7 +41,8 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
       if (!p) throw new PricingError('Produto não encontrado ou inativo — remova o item')
       return buildSnapshot(p, sel)
     })
-    const { subtotal, total } = calcQuoteTotal(snapshots.map(s => s.line_total), input.discount, input.multiplier)
+    const { subtotal, total } = calcQuoteTotal(
+      snapshots.map(s => s.line_total), input.discountType, input.discount, input.multiplier)
 
     const quoteRow = {
       client_id: input.clientId,
@@ -48,6 +50,7 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
       customer_phone: input.customerPhone.trim(),
       site_address: input.siteAddress.trim(),
       discount: input.discount,
+      discount_type: input.discountType,
       multiplier: input.multiplier,
       delivery_date: input.deliveryDate,
       general_note: input.generalNote.trim(),
