@@ -1,7 +1,12 @@
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const pct = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
 
 export function formatBRL(v: number): string {
   return brl.format(v)
+}
+
+export function formatPercent(v: number): string {
+  return `${pct.format(v)}%`
 }
 
 export function parseDecimal(s: string): number {
