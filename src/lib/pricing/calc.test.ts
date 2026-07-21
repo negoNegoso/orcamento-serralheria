@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PricingError, calcItem, calcQuoteTotal, round2 } from './calc'
+import { PricingError, calcItem, calcQuoteTotal, discountAmount, round2 } from './calc'
 import type { ItemInput } from './types'
 
 const m2Item = (over: Partial<ItemInput> = {}): ItemInput => ({
@@ -154,25 +154,56 @@ describe('calcItem extraValue (ajuste do item)', () => {
   })
 })
 
-describe('calcQuoteTotal', () => {
-  it('soma linhas e aplica desconto (unitTotal = total quando multiplicador 1)', () => {
-    expect(calcQuoteTotal([300, 1260], 60)).toEqual({ subtotal: 1560, unitTotal: 1500, total: 1500 })
+describe('discountAmount', () => {
+  it('percent: aplica a porcentagem sobre o subtotal líquido', () => {
+    expect(discountAmount(1000, 'percent', 10)).toBe(100)
+    expect(discountAmount(1400, 'percent', 5)).toBe(70)
   })
-  it('desconto padrão 0', () => {
+  it('percent: arredonda em fronteira de dinheiro', () => {
+    expect(discountAmount(333.7, 'percent', 12.5)).toBe(41.71) // 41.7125
+  })
+  it('percent: 0 e 100 são válidos', () => {
+    expect(discountAmount(1000, 'percent', 0)).toBe(0)
+    expect(discountAmount(1000, 'percent', 100)).toBe(1000)
+  })
+  it('percent: rejeita fora de 0–100', () => {
+    expect(() => discountAmount(1000, 'percent', -1)).toThrow(PricingError)
+    expect(() => discountAmount(1000, 'percent', 101)).toThrow(PricingError)
+  })
+  it('valor: devolve o próprio valor em R$', () => {
+    expect(discountAmount(1000, 'valor', 250)).toBe(250)
+  })
+  it('valor: rejeita negativo ou maior que o subtotal', () => {
+    expect(() => discountAmount(1000, 'valor', -1)).toThrow(PricingError)
+    expect(() => discountAmount(1000, 'valor', 1001)).toThrow(PricingError)
+  })
+})
+
+describe('calcQuoteTotal', () => {
+  it('soma linhas e aplica desconto em valor', () => {
+    expect(calcQuoteTotal([300, 1260], 'valor', 60)).toEqual({ subtotal: 1560, unitTotal: 1500, total: 1500 })
+  })
+  it('aplica desconto percentual sobre o subtotal', () => {
+    expect(calcQuoteTotal([300, 1260], 'percent', 10)).toEqual({ subtotal: 1560, unitTotal: 1404, total: 1404 })
+  })
+  it('desconto padrão 0 (tipo valor)', () => {
     expect(calcQuoteTotal([100.005]).total).toBe(100.01)
   })
-  it('rejeita desconto negativo ou maior que subtotal', () => {
-    expect(() => calcQuoteTotal([100], -1)).toThrow(PricingError)
-    expect(() => calcQuoteTotal([100], 101)).toThrow(PricingError)
+  it('rejeita desconto valor negativo ou maior que subtotal', () => {
+    expect(() => calcQuoteTotal([100], 'valor', -1)).toThrow(PricingError)
+    expect(() => calcQuoteTotal([100], 'valor', 101)).toThrow(PricingError)
+  })
+  it('rejeita percentual fora de 0–100', () => {
+    expect(() => calcQuoteTotal([100], 'percent', 101)).toThrow(PricingError)
   })
   it('multiplicador multiplica o valor por unidade', () => {
-    expect(calcQuoteTotal([300, 1260], 60, 3)).toEqual({ subtotal: 1560, unitTotal: 1500, total: 4500 })
+    expect(calcQuoteTotal([300, 1260], 'valor', 60, 3)).toEqual({ subtotal: 1560, unitTotal: 1500, total: 4500 })
   })
   it('multiplicador 1 é o padrão', () => {
-    expect(calcQuoteTotal([100]).total).toBe(calcQuoteTotal([100], 0, 1).total)
+    expect(calcQuoteTotal([100]).total).toBe(calcQuoteTotal([100], 'valor', 0, 1).total)
   })
   it('rejeita multiplicador não inteiro ou menor que 1', () => {
-    expect(() => calcQuoteTotal([100], 0, 0)).toThrow(PricingError)
-    expect(() => calcQuoteTotal([100], 0, 1.5)).toThrow(PricingError)
+    expect(() => calcQuoteTotal([100], 'valor', 0, 0)).toThrow(PricingError)
+    expect(() => calcQuoteTotal([100], 'valor', 0, 1.5)).toThrow(PricingError)
   })
 })
