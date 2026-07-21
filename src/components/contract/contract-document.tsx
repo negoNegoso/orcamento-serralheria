@@ -31,6 +31,7 @@ export function ContractDocument({ company, quote, items, consumer, terms, witne
 }) {
   const footer = quoteDisplayFooter(
     Number(quote.subtotal),
+    (quote.discount_type ?? 'valor') as 'valor' | 'percent',
     Number(quote.discount),
     items.map(it => Number(it.extra_value ?? 0)),
     Number(quote.multiplier ?? 1),
@@ -124,10 +125,20 @@ export function ContractDocument({ company, quote, items, consumer, terms, witne
                   <td colSpan={5} className="border border-border px-2 py-1 text-right text-muted-foreground">Subtotal</td>
                   <td className="border border-border px-2 py-1 text-right">{formatBRL(footer.subtotal)}</td>
                 </tr>
-                <tr>
-                  <td colSpan={5} className="border border-border px-2 py-1 text-right text-green-700">Desconto</td>
-                  <td className="border border-border px-2 py-1 text-right text-green-700">−{formatBRL(footer.discount)}</td>
-                </tr>
+                {footer.itemAdjustment > 0 && (
+                  <tr>
+                    <td colSpan={5} className="border border-border px-2 py-1 text-right text-green-700">Ajuste dos itens</td>
+                    <td className="border border-border px-2 py-1 text-right text-green-700">−{formatBRL(footer.itemAdjustment)}</td>
+                  </tr>
+                )}
+                {footer.discount > 0 && (
+                  <tr>
+                    <td colSpan={5} className="border border-border px-2 py-1 text-right text-green-700">
+                      Desconto{footer.discountPercentLabel ? ` (${footer.discountPercentLabel})` : ''}
+                    </td>
+                    <td className="border border-border px-2 py-1 text-right text-green-700">−{formatBRL(footer.discount)}</td>
+                  </tr>
+                )}
               </>
             )}
             {footer.multiplier > 1 && (
