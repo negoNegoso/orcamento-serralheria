@@ -107,6 +107,14 @@ describe('buildQuoteMessage', () => {
     expect(msg).toContain('*Total: R$\u00a0900,00*')
   })
 
+  it('desconto percentual: 10% reduz total de 1000 para 900', () => {
+    const msg = buildQuoteMessage(
+      { customer_name: 'Ana', subtotal: 1000, discount: 10, discount_type: 'percent' as const },
+      [{ product_name: 'Janela', line_total: 1000 }],
+    )
+    expect(msg).toContain('*Total: R$\u00a0900,00*')
+  })
+
   it('width_m sem height_m: sem medidas exibidas', () => {
     const msg = buildQuoteMessage(baseQuote, [
       { product_name: 'Peça', width_m: 1.5, line_total: 200 },
