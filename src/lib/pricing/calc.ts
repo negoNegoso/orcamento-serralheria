@@ -66,14 +66,30 @@ export function calcItem(input: ItemInput): ItemTotals {
   }
 }
 
+export function discountAmount(
+  subtotalNet: number,
+  type: 'valor' | 'percent',
+  value: number,
+): number {
+  if (type === 'percent') {
+    if (value < 0 || value > 100) {
+      throw new PricingError('Percentual de desconto deve estar entre 0 e 100')
+    }
+    return round2(subtotalNet * value / 100)
+  }
+  if (value < 0) throw new PricingError('Desconto não pode ser negativo')
+  if (value > subtotalNet) throw new PricingError('Desconto não pode ser maior que o subtotal')
+  return round2(value)
+}
+
 export function calcQuoteTotal(
   lineTotals: number[],
-  discount = 0,
+  discountType: 'valor' | 'percent' = 'valor',
+  discountValue = 0,
   multiplier = 1,
 ): { subtotal: number; unitTotal: number; total: number } {
   const subtotal = round2(lineTotals.reduce((a, b) => a + b, 0))
-  if (discount < 0) throw new PricingError('Desconto não pode ser negativo')
-  if (discount > subtotal) throw new PricingError('Desconto não pode ser maior que o subtotal')
+  const discount = discountAmount(subtotal, discountType, discountValue)
   if (!Number.isInteger(multiplier) || multiplier < 1) {
     throw new PricingError('Multiplicador deve ser um número inteiro maior ou igual a 1')
   }

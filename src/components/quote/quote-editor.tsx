@@ -22,6 +22,7 @@ export interface ExistingQuote {
   client_id: string | null
   site_address: string
   discount: number
+  discount_type: 'valor' | 'percent'
   multiplier: number
   status: string
   delivery_date: string | null
@@ -45,6 +46,7 @@ export function QuoteEditor({ products, quote, initialClient }: {
   })
   const [siteAddress, setSiteAddress] = useState(quote?.site_address ?? '')
   const [discountStr, setDiscountStr] = useState(quote?.discount ? String(quote.discount) : '')
+  const [discountType, setDiscountType] = useState<'valor' | 'percent'>(quote?.discount_type ?? 'valor')
   const [multiplierStr, setMultiplierStr] = useState(String(quote?.multiplier ?? 1))
   const [deliveryDate, setDeliveryDate] = useState(quote?.delivery_date ?? '')
   const [generalNote, setGeneralNote] = useState(quote?.general_note ?? '')
@@ -68,11 +70,11 @@ export function QuoteEditor({ products, quote, initialClient }: {
     const multiplier = Math.max(1, Math.trunc(Number(multiplierStr)) || 1)
     let totals = { subtotal: 0, unitTotal: 0, total: 0 }
     let totalError = ''
-    try { totals = calcQuoteTotal(valid.map(s => s.line_total), discount, multiplier) }
+    try { totals = calcQuoteTotal(valid.map(s => s.line_total), discountType, discount, multiplier) }
     catch (e) { totalError = e instanceof PricingError ? e.message : 'Erro' }
-    const footer = quoteDisplayFooter(totals.subtotal, discount, valid.map(s => s.extra_value), multiplier)
+    const footer = quoteDisplayFooter(totals.subtotal, discountType, discount, valid.map(s => s.extra_value), multiplier)
     return { snaps, totals, footer, totalError, allValid: valid.length === items.length }
-  }, [items, products, discountStr, multiplierStr])
+  }, [items, products, discountStr, discountType, multiplierStr])
 
   async function onSave() {
     setSaving(true); setError('')
@@ -81,6 +83,7 @@ export function QuoteEditor({ products, quote, initialClient }: {
       clientId: client.clientId,
       customerName: client.name, customerPhone: client.phone, siteAddress,
       discount: discountStr ? parseDecimal(discountStr) : 0,
+      discountType,
       multiplier: Math.max(1, Math.trunc(Number(multiplierStr)) || 1),
       deliveryDate,
       generalNote,
@@ -182,16 +185,30 @@ export function QuoteEditor({ products, quote, initialClient }: {
 
       <section className="space-y-2 border-t pt-3">
         <div className="flex items-center gap-2">
-          <Label className="shrink-0">Desconto (R$)</Label>
-          <Input inputMode="decimal" value={discountStr} onChange={e => setDiscountStr(e.target.value)} className="w-28" />
+          <Label className="shrink-0">Desconto</Label>
+          <Input inputMode="decimal" value={discountStr}
+            onChange={e => setDiscountStr(e.target.value)} className="w-28" />
+          <div className="flex overflow-hidden rounded border">
+            <button type="button"
+              className={`px-3 py-1 text-sm ${discountType === 'valor' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+              onClick={() => setDiscountType('valor')}>R$</button>
+            <button type="button"
+              className={`px-3 py-1 text-sm ${discountType === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+              onClick={() => setDiscountType('percent')}>%</button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Label className="shrink-0">Multiplicador (casas)</Label>
           <Input inputMode="numeric" value={multiplierStr}
             onChange={e => setMultiplierStr(e.target.value)} className="w-20" />
         </div>
-        {computed.footer.hasDeduction && (
-          <p className="text-sm text-green-700">Desconto: −{formatBRL(computed.footer.discount)}</p>
+        {computed.footer.itemAdjustment > 0 && (
+          <p className="text-sm text-green-700">Ajuste dos itens: −{formatBRL(computed.footer.itemAdjustment)}</p>
+        )}
+        {computed.footer.discount > 0 && (
+          <p className="text-sm text-green-700">
+            Desconto{computed.footer.discountPercentLabel ? ` (${computed.footer.discountPercentLabel})` : ''}: −{formatBRL(computed.footer.discount)}
+          </p>
         )}
         <p className="text-sm text-muted-foreground">Subtotal: {formatBRL(computed.footer.subtotal)}</p>
         {computed.footer.multiplier > 1 ? (

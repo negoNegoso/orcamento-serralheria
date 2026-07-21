@@ -5,6 +5,7 @@ export interface QuoteInput {
   customer_name: string
   subtotal: number
   discount: number
+  discount_type: 'valor' | 'percent'
   multiplier?: number
 }
 
@@ -21,7 +22,7 @@ export interface ItemInput {
 export function buildQuoteMessage(quote: QuoteInput, items: ItemInput[]): string {
   const multiplier = quote.multiplier ?? 1
   const extraValues = items.map(i => Number(i.extra_value ?? 0))
-  const footer = quoteDisplayFooter(quote.subtotal, quote.discount, extraValues, multiplier)
+  const footer = quoteDisplayFooter(quote.subtotal, quote.discount_type, quote.discount, extraValues, multiplier)
 
   const lines: string[] = []
   lines.push(`Olá, ${quote.customer_name}! Segue seu orçamento:`)

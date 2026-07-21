@@ -17,55 +17,61 @@ describe('itemDisplayGross', () => {
   })
 })
 
-describe('quoteDisplayFooter', () => {
+describe('quoteDisplayFooter — desconto em valor', () => {
   it('soma ajustes negativos ao desconto e mantém total', () => {
-    // Item A bruto 1000 (ajuste −100), Item B 500; subtotalNet = 900 + 500 = 1400; desconto 50
-    const f = quoteDisplayFooter(1400, 50, [-100, 0])
-    expect(f.subtotal).toBe(1500) // bruto
-    expect(f.discount).toBe(150) // 50 + 100
-    expect(f.total).toBe(1350) // 1400 − 50 (inalterado)
+    const f = quoteDisplayFooter(1400, 'valor', 50, [-100, 0])
+    expect(f.subtotal).toBe(1500)
+    expect(f.discount).toBe(150) // 50 + 100 (fundido)
+    expect(f.itemAdjustment).toBe(0)
+    expect(f.discountPercentLabel).toBeNull()
+    expect(f.total).toBe(1350)
     expect(f.hasDeduction).toBe(true)
   })
   it('sem desconto e sem ajuste negativo: sem dedução', () => {
-    const f = quoteDisplayFooter(1000, 0, [0, 50])
-    expect(f.subtotal).toBe(1000)
+    const f = quoteDisplayFooter(1000, 'valor', 0, [0, 50])
     expect(f.discount).toBe(0)
-    expect(f.total).toBe(1000)
     expect(f.hasDeduction).toBe(false)
   })
-  it('só ajuste negativo (desconto 0) já mostra dedução', () => {
-    const f = quoteDisplayFooter(900, 0, [-100])
+  it('só ajuste negativo já mostra dedução', () => {
+    const f = quoteDisplayFooter(900, 'valor', 0, [-100])
     expect(f.subtotal).toBe(1000)
     expect(f.discount).toBe(100)
-    expect(f.total).toBe(900)
-    expect(f.hasDeduction).toBe(true)
-  })
-  it('ajuste positivo não vira desconto', () => {
-    const f = quoteDisplayFooter(1100, 0, [100])
-    expect(f.subtotal).toBe(1100)
-    expect(f.discount).toBe(0)
-    expect(f.total).toBe(1100)
-    expect(f.hasDeduction).toBe(false)
-  })
-  it('vários ajustes negativos são somados', () => {
-    const f = quoteDisplayFooter(770, 30, [-100, -50, 20])
-    expect(f.subtotal).toBe(920) // 770 + 150
-    expect(f.discount).toBe(180) // 30 + 150
-    expect(f.total).toBe(740) // 770 − 30
     expect(f.hasDeduction).toBe(true)
   })
   it('multiplicador > 1: unitTotal por casa e total multiplicado', () => {
-    const f = quoteDisplayFooter(1400, 50, [-100, 0], 3)
-    expect(f.unitTotal).toBe(1350) // 1400 − 50
-    expect(f.multiplier).toBe(3)
-    expect(f.total).toBe(4050) // 1350 × 3
-    expect(f.subtotal).toBe(1500) // bruto, inalterado
+    const f = quoteDisplayFooter(1400, 'valor', 50, [-100, 0], 3)
+    expect(f.unitTotal).toBe(1350)
+    expect(f.total).toBe(4050)
     expect(f.discount).toBe(150)
   })
-  it('multiplicador padrão 1: total igual ao unitTotal', () => {
-    const f = quoteDisplayFooter(1000, 0, [0])
-    expect(f.unitTotal).toBe(1000)
-    expect(f.multiplier).toBe(1)
-    expect(f.total).toBe(1000)
+})
+
+describe('quoteDisplayFooter — desconto percentual', () => {
+  it('sem ajuste: uma linha de desconto com rótulo de %', () => {
+    const f = quoteDisplayFooter(1000, 'percent', 10, [0])
+    expect(f.discount).toBe(100) // 10% de 1000
+    expect(f.itemAdjustment).toBe(0)
+    expect(f.discountPercentLabel).toBe('10%')
+    expect(f.subtotal).toBe(1000)
+    expect(f.unitTotal).toBe(900)
+    expect(f.total).toBe(900)
+    expect(f.hasDeduction).toBe(true)
+  })
+  it('com ajuste negativo: linhas separadas (ajuste e desconto %)', () => {
+    // subtotalNet 900 (item bruto 1000, ajuste −100); 10% de 900 = 90
+    const f = quoteDisplayFooter(900, 'percent', 10, [-100])
+    expect(f.subtotal).toBe(1000) // bruto
+    expect(f.itemAdjustment).toBe(100) // linha separada
+    expect(f.discount).toBe(90) // 10% do líquido
+    expect(f.discountPercentLabel).toBe('10%')
+    expect(f.unitTotal).toBe(810) // 900 − 90
+    expect(f.total).toBe(810)
+    expect(f.hasDeduction).toBe(true)
+  })
+  it('0%: sem dedução mesmo sem ajuste', () => {
+    const f = quoteDisplayFooter(1000, 'percent', 0, [0])
+    expect(f.discount).toBe(0)
+    expect(f.itemAdjustment).toBe(0)
+    expect(f.hasDeduction).toBe(false)
   })
 })

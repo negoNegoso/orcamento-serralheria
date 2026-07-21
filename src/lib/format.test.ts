@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatBRL, parseDecimal, quotePdfTitle } from './format'
+import { formatBRL, formatPercent, parseDecimal, quotePdfTitle } from './format'
 
 describe('formatBRL', () => {
   it('formata em pt-BR', () => {
@@ -46,5 +46,17 @@ describe('quotePdfTitle', () => {
   it('aceita string ISO', () => {
     const createdAt = new Date(2026, 0, 3, 12, 0, 0).toISOString()
     expect(quotePdfTitle('Maria', createdAt)).toBe('03-01-2026 - Orçamento - Maria')
+  })
+})
+
+describe('formatPercent', () => {
+  it('inteiro sem casas decimais', () => {
+    expect(formatPercent(10)).toBe('10%')
+  })
+  it('decimal com vírgula pt-BR', () => {
+    expect(formatPercent(12.5)).toBe('12,5%')
+  })
+  it('zero', () => {
+    expect(formatPercent(0)).toBe('0%')
   })
 })
