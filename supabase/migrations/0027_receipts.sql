@@ -62,13 +62,17 @@ declare
   v_id         uuid;
 begin
   select company_id, total into v_company_id, v_total
-  from quotes where id = p_quote_id;
+  from quotes where id = p_quote_id
+  for update;
   if v_company_id is null then
     raise exception 'Orçamento não encontrado';
   end if;
 
+  if (p_data->>'amount') is null or (p_data->>'amount') !~ '^-?[0-9]+(\.[0-9]+)?$' then
+    raise exception 'Valor do recibo inválido';
+  end if;
   v_amount := (p_data->>'amount')::numeric;
-  if v_amount is null or v_amount < 0 then
+  if v_amount < 0 then
     raise exception 'Valor do recibo inválido';
   end if;
 
@@ -107,7 +111,7 @@ begin
       receiver_doc    = coalesce(p_data->>'receiver_doc', receiver_doc),
       receiver_method = coalesce(p_data->>'receiver_method', receiver_method),
       updated_at      = now()
-    where id = p_id
+    where id = p_id and quote_id = p_quote_id
     returning id into v_id;
     if v_id is null then
       raise exception 'Recibo não encontrado';
