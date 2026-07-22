@@ -100,13 +100,16 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
               users={(activeUsers ?? []) as { id: string; name: string }[]} />
           : <span className="text-muted-foreground">Responsável: {creatorName}</span>}
       </div>
-      <ReceiptsSection
-        quoteId={quote.id}
-        total={Number(quote.total)}
-        received={Number(fin?.received ?? 0)}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        receipts={(receipts ?? []) as any}
-      />
+      {/* Recibos só aparecem em orçamento aprovado (controle financeiro pós-venda) */}
+      {quote.status === 'aprovado' && (
+        <ReceiptsSection
+          quoteId={quote.id}
+          total={Number(quote.total)}
+          received={Number(fin?.received ?? 0)}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          receipts={(receipts ?? []) as any}
+        />
+      )}
       <QuoteEditor products={products} quote={existing} />
     </div>
   )
