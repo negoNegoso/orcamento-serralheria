@@ -34,13 +34,13 @@ export default async function ProdutosPage({ searchParams }: {
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Preços</h1>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {products.length} {products.length === 1 ? 'produto cadastrado' : 'produtos cadastrados'}
-        </p>
-      </div>
-
-      <NewProductPanel>
+      <NewProductPanel
+        heading={
+          <p className="text-sm text-muted-foreground">
+            {products.length} {products.length === 1 ? 'produto cadastrado' : 'produtos cadastrados'}
+          </p>
+        }
+      >
         <ProductForm action={saveProduct} />
       </NewProductPanel>
 

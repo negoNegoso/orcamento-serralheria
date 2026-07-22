@@ -1,6 +1,7 @@
 import { formatBRL } from '@/lib/format'
+import type { PricingMode } from './types'
 
-export type PricingMode = 'm2' | 'm2_direto' | 'fixo' | 'manual'
+export type { PricingMode }
 
 const MODE_LABELS: Record<PricingMode, string> = {
   m2: 'Por m²',
