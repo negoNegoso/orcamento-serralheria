@@ -1,41 +1,94 @@
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth'
-import { formatBRL } from '@/lib/format'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
+import { SubmitButton } from '@/components/ui/submit-button'
+import {
+  pricingModeLabel,
+  priceLabel,
+  groupsCountLabel,
+  type PricingMode,
+} from '@/lib/pricing/product-listing'
 import { deleteProduct, saveProduct } from './actions'
 import { ProductForm } from './product-form'
-import { SubmitButton } from '@/components/ui/submit-button'
+import { ActiveToggle } from './active-toggle'
+import { NewProductPanel } from './new-product-panel'
 
 export default async function ProdutosPage({ searchParams }: {
   searchParams: Promise<{ q?: string }>
 }) {
   const { q = '' } = await searchParams
   const { supabase } = await getProfile()
-  let query = supabase.from('product_types').select('*').order('sort_order').order('name')
+  let query = supabase
+    .from('product_types')
+    .select('*, option_groups(count)')
+    .order('sort_order')
+    .order('name')
   if (q) query = query.ilike('name', `%${q}%`)
-  const { data: products } = await query
+  const { data } = await query
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const products = (data ?? []) as any[]
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Preços</h1>
-      <ul className="space-y-2">
-        {(products ?? []).map(p => (
-          <li key={p.id} className="flex items-center justify-between rounded border p-3">
-            <div>
-              <Link href={`/admin/produtos/${p.id}`} className="font-medium underline">{p.name}</Link>
-              <p className="text-sm text-muted-foreground">
-                {(p.pricing_mode === 'm2' || p.pricing_mode === 'm2_direto') && `${formatBRL(p.price_per_m2 ?? 0)}/m²`}
-                {p.pricing_mode === 'fixo' && formatBRL(p.base_price ?? 0)}
-                {p.pricing_mode === 'manual' && 'Sob consulta'}
-                {!p.active && ' · inativo'}
-              </p>
-            </div>
-            <form action={deleteProduct.bind(null, p.id)}>
-              <SubmitButton variant="ghost" size="sm" className="text-red-600">Excluir</SubmitButton>
-            </form>
-          </li>
-        ))}
-      </ul>
-      <h2 className="font-semibold">Novo produto</h2>
-      <ProductForm action={saveProduct} />
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {products.length} {products.length === 1 ? 'produto cadastrado' : 'produtos cadastrados'}
+        </p>
+      </div>
+
+      <NewProductPanel>
+        <ProductForm action={saveProduct} />
+      </NewProductPanel>
+
+      {products.length === 0 ? (
+        <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+          Nenhum produto cadastrado.
+        </p>
+      ) : (
+        <ul className="overflow-hidden rounded-lg border">
+          {products.map((p, i) => {
+            const groupsCount = p.option_groups?.[0]?.count ?? 0
+            const price = priceLabel(p)
+            return (
+              <li
+                key={p.id}
+                className={`flex items-center justify-between gap-4 p-4 ${i > 0 ? 'border-t' : ''} ${!p.active ? 'opacity-60' : ''}`}
+              >
+                <div className="min-w-0 space-y-1">
+                  <Link href={`/admin/produtos/${p.id}`} className="font-semibold hover:underline">
+                    {p.name}
+                  </Link>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <Badge variant="secondary">{pricingModeLabel(p.pricing_mode as PricingMode)}</Badge>
+                    {price && <span className="font-medium text-foreground">{price}</span>}
+                    <span>{groupsCountLabel(groupsCount)}</span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <ActiveToggle id={p.id} active={p.active} />
+                  <Button
+                    render={<Link href={`/admin/produtos/${p.id}`} />}
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Editar"
+                  >
+                    <Icon name="edit" />
+                  </Button>
+                  <form action={deleteProduct.bind(null, p.id)}>
+                    <SubmitButton variant="ghost" size="icon-sm" className="text-destructive" aria-label="Excluir">
+                      <Icon name="delete" />
+                    </SubmitButton>
+                  </form>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }
