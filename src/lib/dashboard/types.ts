@@ -26,6 +26,7 @@ export interface DashboardMetrics {
     status: string
     created_at: string
   }[]
+  financeiro: { received_total: number; receivable_total: number; overdue_count: number }
 }
 
 export const EMPTY_METRICS: DashboardMetrics = {
@@ -36,4 +37,5 @@ export const EMPTY_METRICS: DashboardMetrics = {
   sellers: [],
   products: [],
   recent: [],
+  financeiro: { received_total: 0, receivable_total: 0, overdue_count: 0 },
 }
