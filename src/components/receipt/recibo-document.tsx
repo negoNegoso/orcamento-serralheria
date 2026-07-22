@@ -1,9 +1,12 @@
 'use client'
-import { useState } from 'react'
-import { formatBRL } from '@/lib/format'
+import { useActionState, useState } from 'react'
+import { formatBRL, parseDecimal } from '@/lib/format'
 import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 import { receiptDeclaration } from '@/lib/receipt/text'
 import { maskCpfCnpj } from '@/lib/receipt/mask'
+import type { Receipt } from '@/lib/receipt/types'
+import { saveReceipt, type SaveReceiptState } from '@/app/(app)/orcamentos/[id]/recibo/actions'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 
@@ -22,10 +25,9 @@ function EditableInput({ value, onChange, placeholder, className = '', mask }: {
   )
 }
 
-export function ReciboDocument({ company, quote, items }: {
-  company: any; quote: any; items: any[]
+export function ReciboDocument({ company, quote, items, receipt }: {
+  company: any; quote: any; items: any[]; receipt: Receipt
 }) {
-  const total = Number(quote.total)
   const footer = quoteDisplayFooter(
     Number(quote.subtotal),
     (quote.discount_type ?? 'valor') as 'valor' | 'percent',
@@ -33,19 +35,21 @@ export function ReciboDocument({ company, quote, items }: {
     items.map(it => Number(it.extra_value ?? 0)),
     Number(quote.multiplier ?? 1),
   )
-  const today = new Date().toISOString().slice(0, 10)
-  const [clientDoc, setClientDoc] = useState('')
-  const [receiptDate, setReceiptDate] = useState(today)
-  const [payment, setPayment] = useState('')
-  const [receiverName, setReceiverName] = useState(company?.receiver_name ?? '')
-  const [receiverDoc, setReceiverDoc] = useState(company?.cnpj ?? '')
-  const [receiverMethod, setReceiverMethod] = useState('')
+  const [amount, setAmount] = useState(Number(receipt.amount).toFixed(2).replace('.', ','))
+  const [clientDoc, setClientDoc] = useState(receipt.payer_doc ?? '')
+  const [receiptDate, setReceiptDate] = useState(receipt.receipt_date)
+  const [payment, setPayment] = useState(receipt.payment_method ?? '')
+  const [receiverName, setReceiverName] = useState(receipt.receiver_name || company?.receiver_name || '')
+  const [receiverDoc, setReceiverDoc] = useState(receipt.receiver_doc || company?.cnpj || '')
+  const [receiverMethod, setReceiverMethod] = useState(receipt.receiver_method ?? '')
 
+  const amountNum = parseDecimal(amount)
   const displayDate = new Date(receiptDate + 'T12:00:00').toLocaleDateString('pt-BR')
+  const [saveState, saveAction] = useActionState<SaveReceiptState, FormData>(saveReceipt, {})
 
   return (
     <article className="mx-auto max-w-3xl space-y-6 p-4 text-slate-800 print:p-0">
-      {/* Header: card da marca + card do valor */}
+      {/* Header: card da marca + card do valor (editável, com Salvar) */}
       <header className="grid gap-4 sm:grid-cols-2">
         <div className="flex items-center gap-4 rounded-2xl bg-primary p-6 text-primary-foreground">
           {company?.logo_url && <img src={company.logo_url} alt="" className="h-16 w-16 rounded-lg bg-white/20 object-contain p-1" />}
@@ -55,15 +59,35 @@ export function ReciboDocument({ company, quote, items }: {
             <p className="text-sm opacity-90">{company?.city}{company?.phone && ` · ${company.phone}`}</p>
           </div>
         </div>
-        <div className="rounded-2xl bg-muted/50 p-6">
+        <form action={saveAction} className="rounded-2xl bg-muted/50 p-6">
+          <input type="hidden" name="id" value={receipt.id} />
+          <input type="hidden" name="quote_id" value={receipt.quote_id} />
+          <input type="hidden" name="payer_doc" value={clientDoc} />
+          <input type="hidden" name="payment_method" value={payment} />
+          <input type="hidden" name="receiver_name" value={receiverName} />
+          <input type="hidden" name="receiver_doc" value={receiverDoc} />
+          <input type="hidden" name="receiver_method" value={receiverMethod} />
+          <input type="hidden" name="receipt_date" value={receiptDate} />
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Valor recebido</p>
-          <p className="text-3xl font-bold text-primary">{formatBRL(total)}</p>
+          {/* na tela: input editável; na impressão: valor formatado */}
+          <div className="no-print flex items-baseline gap-1 text-3xl font-bold text-primary">
+            <span>R$</span>
+            <input name="amount" value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal"
+              aria-label="Valor recebido"
+              className="w-40 border-b border-dashed border-primary/40 bg-transparent font-bold outline-none focus:border-solid" />
+          </div>
+          <p className="hidden text-3xl font-bold text-primary print:block">{formatBRL(amountNum)}</p>
           <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground no-print">
             <span>Data:</span><input type="date" value={receiptDate} onChange={e => setReceiptDate(e.target.value)}
               className="bg-transparent outline-none" />
           </div>
           <p className="mt-1 hidden text-sm text-muted-foreground print:block">Data: {displayDate}</p>
-        </div>
+          <div className="no-print mt-3 flex flex-wrap items-center gap-3">
+            <SubmitButton size="sm">Salvar recibo</SubmitButton>
+            {saveState.error && <span className="text-sm text-red-600">{saveState.error}</span>}
+            {saveState.ok && <span className="text-sm text-green-600">Recibo salvo.</span>}
+          </div>
+        </form>
       </header>
 
       {/* Recebemos de */}
@@ -79,7 +103,7 @@ export function ReciboDocument({ company, quote, items }: {
 
       {/* Declaração */}
       <section className="text-sm leading-relaxed">
-        <p>{receiptDeclaration(quote.customer_name, total)}</p>
+        <p>{receiptDeclaration(quote.customer_name, amountNum)}</p>
       </section>
 
       {/* Tabela de serviços */}
@@ -104,7 +128,7 @@ export function ReciboDocument({ company, quote, items }: {
           className="mt-1 w-full resize-none border-b border-dashed border-muted-foreground/40 bg-transparent outline-none focus:border-solid print:border-none print:placeholder-transparent" />
       </section>
 
-      {/* Total */}
+      {/* Total do orçamento (referência) */}
       <section className="space-y-1 text-right">
         {footer.hasDeduction && (
           <>
@@ -125,7 +149,7 @@ export function ReciboDocument({ company, quote, items }: {
             <p className="text-sm text-muted-foreground">{footer.multiplier} casas × {formatBRL(footer.unitTotal)}</p>
           </>
         )}
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total do orçamento</p>
         <p className="text-3xl font-bold text-primary">{formatBRL(footer.total)}</p>
       </section>
 
