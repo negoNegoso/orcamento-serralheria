@@ -27,12 +27,17 @@ export async function createReceipt(quoteId: string) {
   redirect(`/orcamentos/${quoteId}/recibo/${id}`)
 }
 
+// Estado do formulário de recibo: erro de validação (ex.: saldo estourado) volta
+// pra UI em vez de derrubar a página. ok=true sinaliza salvamento bem-sucedido.
+export type SaveReceiptState = { error?: string; ok?: boolean }
+
 // Grava alterações de um recibo (valor + campos do documento). Valida saldo no RPC.
-export async function saveReceipt(fd: FormData) {
+// Erros voltam como estado (useActionState) — nunca lançam pra não crashar a página.
+export async function saveReceipt(_prev: SaveReceiptState, fd: FormData): Promise<SaveReceiptState> {
   const { supabase } = await getProfile()
   const id = String(fd.get('id') ?? '')
   const quoteId = String(fd.get('quote_id') ?? '')
-  if (!id || !quoteId) throw new Error('Recibo inválido')
+  if (!id || !quoteId) return { error: 'Recibo inválido' }
   const p_data = {
     amount: parseDecimal(String(fd.get('amount') ?? '0')),
     receipt_date: String(fd.get('receipt_date') ?? '') || null,
@@ -43,9 +48,10 @@ export async function saveReceipt(fd: FormData) {
     receiver_method: String(fd.get('receiver_method') ?? ''),
   }
   const { error } = await supabase.rpc('save_receipt', { p_id: id, p_quote_id: quoteId, p_data })
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
   revalidatePath(`/orcamentos/${quoteId}`)
   revalidatePath(`/orcamentos/${quoteId}/recibo/${id}`)
+  return { ok: true }
 }
 
 export async function deleteReceipt(fd: FormData) {

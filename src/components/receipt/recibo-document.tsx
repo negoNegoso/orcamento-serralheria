@@ -1,11 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import { formatBRL, parseDecimal } from '@/lib/format'
 import { itemDisplayGross, quoteDisplayFooter } from '@/lib/pricing/display'
 import { receiptDeclaration } from '@/lib/receipt/text'
 import { maskCpfCnpj } from '@/lib/receipt/mask'
 import type { Receipt } from '@/lib/receipt/types'
-import { saveReceipt } from '@/app/(app)/orcamentos/[id]/recibo/actions'
+import { saveReceipt, type SaveReceiptState } from '@/app/(app)/orcamentos/[id]/recibo/actions'
 import { SubmitButton } from '@/components/ui/submit-button'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
@@ -45,11 +45,12 @@ export function ReciboDocument({ company, quote, items, receipt }: {
 
   const amountNum = parseDecimal(amount)
   const displayDate = new Date(receiptDate + 'T12:00:00').toLocaleDateString('pt-BR')
+  const [saveState, saveAction] = useActionState<SaveReceiptState, FormData>(saveReceipt, {})
 
   return (
     <article className="mx-auto max-w-3xl space-y-6 p-4 text-slate-800 print:p-0">
       {/* barra de ações (não imprime) */}
-      <form action={saveReceipt} className="no-print flex flex-wrap items-end gap-3 rounded-xl border p-3">
+      <form action={saveAction} className="no-print flex flex-wrap items-end gap-3 rounded-xl border p-3">
         <input type="hidden" name="id" value={receipt.id} />
         <input type="hidden" name="quote_id" value={receipt.quote_id} />
         <input type="hidden" name="payer_doc" value={clientDoc} />
@@ -63,6 +64,8 @@ export function ReciboDocument({ company, quote, items, receipt }: {
             inputMode="decimal" className="ml-2 w-32 rounded border px-2 py-1" />
         </label>
         <SubmitButton size="sm">Salvar recibo</SubmitButton>
+        {saveState.error && <p className="w-full text-sm text-red-600">{saveState.error}</p>}
+        {saveState.ok && <p className="w-full text-sm text-green-600">Recibo salvo.</p>}
       </form>
 
       {/* Header: card da marca + card do valor */}
