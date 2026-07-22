@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { formatBRL, formatPercent, parseDecimal, quotePdfTitle } from './format'
+import { formatBRL, formatPercent, parseDecimal, quotePdfTitle, sanitizePdfName } from './format'
+
+describe('sanitizePdfName', () => {
+  it('remove separadores de caminho e caracteres ilegais', () => {
+    expect(sanitizePdfName('Orç/2026: proposta*final?', 'fallback')).toBe('Orç2026 propostafinal')
+  })
+
+  it('faz trim das pontas', () => {
+    expect(sanitizePdfName('   Orçamento João   ', 'fallback')).toBe('Orçamento João')
+  })
+
+  it('vazio → fallback', () => {
+    expect(sanitizePdfName('', 'Padrão')).toBe('Padrão')
+  })
+
+  it('só espaços ou só caracteres ilegais → fallback', () => {
+    expect(sanitizePdfName('   ', 'Padrão')).toBe('Padrão')
+    expect(sanitizePdfName('///\\:*', 'Padrão')).toBe('Padrão')
+  })
+
+  it('nome válido passa inalterado', () => {
+    expect(sanitizePdfName('05-05-2026 - Orçamento - Maria', 'fallback'))
+      .toBe('05-05-2026 - Orçamento - Maria')
+  })
+})
 
 describe('formatBRL', () => {
   it('formata em pt-BR', () => {
