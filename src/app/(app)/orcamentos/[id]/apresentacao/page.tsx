@@ -52,7 +52,8 @@ export default async function Apresentacao({ params }: { params: Promise<{ id: s
         <Link href={`/orcamentos/${id}`} className="text-sm underline">← Voltar</Link>
         <div className="ml-auto">
           <ShareBar quoteId={quote.id} token={quote.token} customerName={quote.customer_name}
-            total={Number(quote.total)} markSent={quote.status === 'rascunho'} fullMessage={fullMessage} />
+            total={Number(quote.total)} markSent={quote.status === 'rascunho'} fullMessage={fullMessage}
+            defaultPdfName={quotePdfTitle(quote.customer_name, quote.created_at)} />
         </div>
       </div>
       <QuotePresentation company={company} quote={quote} items={items} conditions={conditions} internal={true} />
