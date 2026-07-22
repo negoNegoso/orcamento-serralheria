@@ -32,3 +32,13 @@ export async function deleteProduct(id: string) {
   if (error) throw new Error(error.message)
   revalidatePath('/admin/produtos')
 }
+
+export async function toggleProductActive(id: string, active: boolean) {
+  const { supabase } = await getProfile()
+  const { error } = await supabase
+    .from('product_types')
+    .update({ active })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/produtos')
+}
