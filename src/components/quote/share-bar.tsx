@@ -2,15 +2,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { setStatus } from '@/app/(app)/orcamentos/actions'
-import { formatBRL } from '@/lib/format'
+import { formatBRL, sanitizePdfName } from '@/lib/format'
 
-export function ShareBar({ quoteId, token, customerName, total, markSent, fullMessage }: {
-  quoteId: string; token: string; customerName: string; total: number; markSent: boolean; fullMessage: string
+export function ShareBar({ quoteId, token, customerName, total, markSent, fullMessage, defaultPdfName }: {
+  quoteId: string; token: string; customerName: string; total: number; markSent: boolean
+  fullMessage: string; defaultPdfName: string
 }) {
   const [copied, setCopied] = useState(false)
   const [waOpen, setWaOpen] = useState(false)
+  const [pdfName, setPdfName] = useState(defaultPdfName)
   const waRef = useRef<HTMLDivElement>(null)
   const publicUrl = () => `${window.location.origin}/o/${token}`
+
+  // Nome do PDF vem do document.title; ajusta antes de imprimir e restaura depois.
+  function downloadPdf() {
+    const prev = document.title
+    document.title = sanitizePdfName(pdfName, defaultPdfName)
+    const restore = () => { document.title = prev; window.removeEventListener('afterprint', restore) }
+    window.addEventListener('afterprint', restore)
+    window.print()
+  }
 
   async function sent() { if (markSent) await setStatus(quoteId, 'enviado') }
 
@@ -67,7 +78,13 @@ export function ShareBar({ quoteId, token, customerName, total, markSent, fullMe
         await sent()
         setCopied(true); setTimeout(() => setCopied(false), 2000)
       }}>{copied ? 'Copiado!' : 'Copiar link'}</Button>
-      <Button variant="outline" onClick={() => window.print()}>Baixar PDF</Button>
+      <input
+        value={pdfName}
+        onChange={e => setPdfName(e.target.value)}
+        aria-label="Nome do arquivo PDF"
+        className="no-print min-w-0 flex-1 rounded border px-2 py-1 text-sm sm:max-w-xs"
+      />
+      <Button variant="outline" onClick={downloadPdf}>Baixar PDF</Button>
     </div>
   )
 }

@@ -3,24 +3,19 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
-import { receiptPaymentPrefill } from '@/lib/receipt/payment-prefill'
 
-// Cria um recibo com valor = saldo restante e forma de pagamento vinda das
-// condições cadastradas; depois abre a página de impressão do recibo criado.
+// Cria um recibo com valor = saldo restante; a forma de pagamento fica em branco
+// (o usuário adiciona as condições cadastradas pelo seletor no próprio recibo).
 export async function createReceipt(quoteId: string) {
   const { supabase } = await getProfile()
   const { data: quote } = await supabase.from('quotes').select('total').eq('id', quoteId).single()
   if (!quote) throw new Error('Orçamento não encontrado')
-  const [{ data: fin }, { data: conds }] = await Promise.all([
-    supabase.from('quote_financials').select('balance').eq('quote_id', quoteId).single(),
-    supabase.from('payment_conditions').select('*').order('sort_order'),
-  ])
+  const { data: fin } = await supabase.from('quote_financials').select('balance').eq('quote_id', quoteId).single()
   const balance = Number(fin?.balance ?? quote.total)
-  const payment = receiptPaymentPrefill(conds ?? [], Number(quote.total))
   const { data: id, error } = await supabase.rpc('save_receipt', {
     p_id: null,
     p_quote_id: quoteId,
-    p_data: { amount: balance, payment_method: payment },
+    p_data: { amount: balance },
   })
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}`)

@@ -30,3 +30,10 @@ export function quotePdfTitle(customerName: string, createdAt: string | Date): s
   const date = new Date(createdAt).toLocaleDateString('pt-BR').replace(/\//g, '-')
   return `${date} - Orçamento - ${customerName}`
 }
+
+// Nome de arquivo seguro pro PDF: remove separadores de caminho/ilegais e faz
+// trim; se sobrar vazio, cai no fallback (nome padrão).
+export function sanitizePdfName(name: string, fallback: string): string {
+  const cleaned = name.replace(/[/\\:*?"<>|]/g, '').trim()
+  return cleaned || fallback
+}
