@@ -1,26 +1,26 @@
 -- supabase/migrations/0028_dashboard_financeiro.sql
 -- Adiciona o bloco 'financeiro' ao dashboard_metrics: recebido (por receipt_date
 -- no período), a receber (saldo de aprovados) e nº de aprovados em aberto.
+-- IMPORTANTE: baseado na versão MULTI-TENANT do 0018 (is_company_admin() +
+-- escopo por current_company_id()), não na versão single-tenant do 0006.
 create or replace function public.dashboard_metrics(
   p_start timestamptz default null,
   p_end timestamptz default null
 ) returns jsonb
-language plpgsql
-stable
-security definer
-set search_path = public
-as $$
+language plpgsql stable security definer set search_path = public as $$
 declare
   result jsonb;
-  v_company uuid := public.current_company_id();
+  v_company uuid;
 begin
-  if not public.is_admin() then
+  if not public.is_company_admin() then
     raise exception 'not authorized';
   end if;
+  v_company := public.current_company_id();
 
   with periodo as (
     select q.* from quotes q
-    where (p_start is null or q.created_at >= p_start)
+    where q.company_id = v_company
+      and (p_start is null or q.created_at >= p_start)
       and (p_end is null or q.created_at < p_end)
   )
   select jsonb_build_object(
@@ -49,7 +49,7 @@ begin
       select jsonb_build_object(
         'due_7_days', count(*) filter (where status = 'enviado' and valid_until >= current_date and valid_until <= current_date + 7),
         'overdue', count(*) filter (where status = 'enviado' and valid_until < current_date)
-      ) from quotes
+      ) from quotes where company_id = v_company
     ),
     'monthly', (
       select coalesce(jsonb_agg(jsonb_build_object('month', m, 'value', v) order by m), '[]'::jsonb)
@@ -87,14 +87,15 @@ begin
       ) order by created_at desc), '[]'::jsonb)
       from (
         select id, customer_name, total, status, created_at
-        from quotes order by created_at desc limit 8
+        from quotes where company_id = v_company
+        order by created_at desc limit 8
       ) t
     ),
     'financeiro', jsonb_build_object(
       'received_total', (
         select coalesce(sum(r.amount), 0)
         from receipts r
-        where (v_company is null or r.company_id = v_company)
+        where r.company_id = v_company
           and (p_start is null or r.receipt_date >= p_start::date)
           and (p_end is null or r.receipt_date < p_end::date)
       ),
@@ -102,13 +103,13 @@ begin
         select coalesce(sum(f.balance), 0)
         from quote_financials f
         where f.status = 'aprovado'
-          and (v_company is null or f.company_id = v_company)
+          and f.company_id = v_company
       ),
       'overdue_count', (
         select count(*)
         from quote_financials f
         where f.status = 'aprovado' and f.balance > 0
-          and (v_company is null or f.company_id = v_company)
+          and f.company_id = v_company
       )
     )
   ) into result;
@@ -116,6 +117,4 @@ begin
   return result;
 end;
 $$;
-
-revoke execute on function public.dashboard_metrics(timestamptz, timestamptz) from public, anon;
 grant execute on function public.dashboard_metrics(timestamptz, timestamptz) to authenticated;
