@@ -25,8 +25,9 @@ function EditableInput({ value, onChange, placeholder, className = '', mask }: {
   )
 }
 
-export function ReciboDocument({ company, quote, items, receipt }: {
+export function ReciboDocument({ company, quote, items, receipt, conditions }: {
   company: any; quote: any; items: any[]; receipt: Receipt
+  conditions: { id: string; description: string }[]
 }) {
   const footer = quoteDisplayFooter(
     Number(quote.subtotal),
@@ -46,6 +47,16 @@ export function ReciboDocument({ company, quote, items, receipt }: {
   const amountNum = parseDecimal(amount)
   const displayDate = new Date(receiptDate + 'T12:00:00').toLocaleDateString('pt-BR')
   const [saveState, saveAction] = useActionState<SaveReceiptState, FormData>(saveReceipt, {})
+
+  // Adiciona a condição escolhida como uma nova linha na forma de pagamento (sem duplicar)
+  function addCondition(desc: string) {
+    const d = desc.trim()
+    if (!d) return
+    setPayment(prev => {
+      const lines = prev.split('\n').map(l => l.trim()).filter(Boolean)
+      return lines.includes(d) ? prev : (prev ? `${prev}\n${d}` : d)
+    })
+  }
 
   return (
     <article className="mx-auto max-w-3xl space-y-6 p-4 text-slate-800 print:p-0">
@@ -123,8 +134,16 @@ export function ReciboDocument({ company, quote, items, receipt }: {
       {/* Pagamento */}
       <section className="rounded-2xl border p-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Forma de pagamento</p>
+        {conditions.length > 0 && (
+          <select value="" onChange={e => addCondition(e.target.value)}
+            aria-label="Adicionar condição cadastrada"
+            className="no-print mt-1 w-full rounded border px-2 py-1 text-sm">
+            <option value="">+ Adicionar condição cadastrada…</option>
+            {conditions.map(c => <option key={c.id} value={c.description}>{c.description}</option>)}
+          </select>
+        )}
         <textarea value={payment} onChange={e => setPayment(e.target.value)} rows={3}
-          placeholder="Ex.: Entrada R$ 2.000 cartão crédito 10x; Entrega R$ 2.000 cartão crédito 10x"
+          placeholder="Selecione uma condição acima ou digite. Ex.: Entrada R$ 2.000 cartão crédito 10x"
           className="mt-1 w-full resize-none border-b border-dashed border-muted-foreground/40 bg-transparent outline-none focus:border-solid print:border-none print:placeholder-transparent" />
       </section>
 

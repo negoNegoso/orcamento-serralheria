@@ -15,9 +15,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ReciboPage({ params }: { params: Promise<{ id: string; receiptId: string }> }) {
   const { id, receiptId } = await params
   const { supabase } = await getProfile()
-  const [{ data: quote }, { data: receipt }] = await Promise.all([
+  const [{ data: quote }, { data: receipt }, { data: conditions }] = await Promise.all([
     supabase.from('quotes').select('*, quote_items(*)').eq('id', id).single(),
     supabase.from('receipts').select('*').eq('id', receiptId).single(),
+    supabase.from('payment_conditions').select('id, description').eq('active', true).order('sort_order'),
   ])
   if (!quote || !receipt) notFound()
   const { data: company } = await supabase.from('companies').select('*').eq('id', quote.company_id).single()
@@ -29,7 +30,7 @@ export default async function ReciboPage({ params }: { params: Promise<{ id: str
         <Link href={`/orcamentos/${id}`} className="text-sm underline">← Voltar</Link>
         <div className="ml-auto"><PrintButton /></div>
       </div>
-      <ReciboDocument company={company} quote={quote} items={items} receipt={receipt} />
+      <ReciboDocument company={company} quote={quote} items={items} receipt={receipt} conditions={conditions ?? []} />
     </div>
   )
 }
