@@ -1,0 +1,147 @@
+# Categorização de preços (repasse / custo / insumo)
+
+Data: 2026-07-23
+
+## Problema
+
+Os preços do catálogo (preço base do produto, adicionais de opções) não têm classificação
+financeira. Não dá para saber quanto de um orçamento é material comprado, quanto é serviço
+repassado a terceiro e quanto é custo interno.
+
+## Objetivo desta entrega
+
+Marcar cada preço com **uma** categoria: `custo`, `insumo` ou `repasse`.
+
+Só a marcação. Nenhum cálculo derivado. Análise de margem, rollup no financeiro e lista de
+compras são fluxos seguintes e serão especificados separadamente — esta entrega existe para
+dar a eles o dado de entrada.
+
+## Decisões
+
+| Decisão | Escolha | Motivo |
+|---|---|---|
+| Cardinalidade | Uma categoria por preço | Simples de usar agora; composição (split em valores) fica para depois |
+| Valor da composição | Nenhum | Decisão de % vs R$ adiada; não travar o modelo agora |
+| Catálogo de categorias | Global, igual para todas as empresas | Pedido explícito; sem `tenant_id` |
+| Armazenamento | Tabela + FK (não enum) | Categoria nova = 1 insert, não migração em N tabelas |
+| Herança | Grupo → opção, calculada na leitura | Sem trigger e sem denormalização; mudar o grupo reflete na hora |
+| Modelos | Fora do escopo | `models.surcharge` não recebe categoria |
+
+## Schema
+
+Migration `supabase/migrations/0029_price_categories.sql`.
+
+```sql
+create table price_categories (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,   -- 'custo' | 'insumo' | 'repasse'
+  name text not null,
+  sort_order int not null default 0
+);
+
+insert into price_categories (slug, name, sort_order) values
+  ('custo','Custo',0), ('insumo','Insumo',1), ('repasse','Repasse',2);
+
+alter table options       add column price_category_id uuid references price_categories(id);
+alter table option_groups add column price_category_id uuid references price_categories(id);
+alter table product_types add column price_category_id uuid references price_categories(id);
+```
+
+`price_category_id` é nullable — todos os registros existentes começam sem categoria, e "sem
+categoria" segue sendo estado válido depois. Não há backfill.
+
+`product_types.price_category_id` categoriza o preço base (`base_price` / `price_per_m2`).
+
+RLS, seguindo `business_areas` (0020): catálogo compartilhado, leitura para qualquer usuário
+autenticado. Sem policies de insert/update/delete — o seed é fixo e o app não edita categorias.
+
+```sql
+alter table price_categories enable row level security;
+create policy pc_read on price_categories for select to authenticated using (true);
+```
+
+## Herança grupo → opção
+
+A opção usa a própria categoria; se não tiver, herda a do grupo:
+
+```
+categoriaEfetiva(opcao, grupo) = opcao.price_category_id ?? grupo.price_category_id ?? null
+```
+
+Calculada na leitura, em `src/lib/pricing/price-category.ts`. Nada é copiado para a linha da
+opção — trocar a categoria do grupo muda todas as opções que não definiram a sua.
+
+Definir a categoria no grupo serve de padrão para as opções dentro dele. A opção sobrescreve
+quando destoa (grupo "Ferragens" = insumo, opção "Instalação" dentro dele = repasse).
+
+Mão de obra, instalação e frete são modelados como opções hoje, então já são cobertos por essa
+regra. Nenhuma entidade nova.
+
+## UI
+
+Três seletores, todos no mesmo padrão de auto-save já usado pelos campos de surcharge.
+
+**Opção** — `src/app/(app)/admin/produtos/[id]/option-row.tsx`: `<select>` "Categoria" ao lado
+de tipo/valor. Primeira entrada vazia = "— herdar do grupo —". Quando vazio, o select exibe em
+cinza a categoria herdada do grupo.
+
+**Grupo** — `src/app/(app)/admin/produtos/[id]/group-card.tsx`: `<select>` "Categoria padrão"
+no header. Entrada vazia = "— sem categoria —".
+
+**Preço base** — `src/app/(app)/admin/produtos/product-form.tsx`: `<select>` "Categoria" junto
+dos campos de preço.
+
+As opções do select vêm de `price_categories`, buscadas no server component pai (`[id]/page.tsx`
+e `produtos/page.tsx`) e passadas por prop. Catálogo pequeno e fixo, sem fetch no cliente.
+
+Nenhuma tela nova. Nenhum badge de categoria no orçamento, no PDF ou no dashboard.
+
+## Server actions
+
+`saveOption` e `saveGroup` em `src/app/(app)/admin/produtos/[id]/actions.ts` e `saveProduct` em
+`src/app/(app)/admin/produtos/actions.ts` passam a ler `price_category_id` do
+`FormData`. String vazia vira `null`. Valor não-vazio precisa ser um id existente em
+`price_categories` — se não for, a action rejeita e o campo não é gravado. `revalidatePath`
+segue como está.
+
+## Types
+
+`src/lib/config-types.ts`: `price_category_id: string | null` em `OptionRow`, `OptionGroupRow`
+e `ProductConfig`. Novo `PriceCategory { id, slug, name, sort_order }`.
+
+Regenerar os types do Supabase depois da migration.
+
+## Testes
+
+`price-category.test.ts` (vitest, junto de `src/lib/pricing/`), cobrindo `categoriaEfetiva`:
+opção com categoria própria ignora o grupo; opção sem categoria herda a do grupo; ambos nulos
+resulta em `null`.
+
+O motor de preço não muda, então os testes de `calc.ts` e `snapshot.test.ts` seguem válidos sem
+alteração.
+
+## Fora de escopo
+
+- `src/lib/pricing/calc.ts` e qualquer cálculo derivado da categoria.
+- Snapshot do orçamento (`quote_items.selected_options`) — não guarda categoria ainda.
+- Dashboard financeiro (0028) — sem totais por categoria.
+- Produção, contrato, recibo.
+- `models.surcharge`.
+- Split de um preço em vários valores (insumo + repasse + custo) e a escolha entre % e R$.
+- Tela de administração das categorias — o seed é fixo; categoria nova entra por migration.
+
+## Arquivos
+
+| Arquivo | Mudança |
+|---|---|
+| `supabase/migrations/0029_price_categories.sql` | tabela, seed, 3 FKs, RLS |
+| `src/lib/config-types.ts` | `PriceCategory`; `price_category_id` nos 3 types |
+| `src/lib/pricing/price-category.ts` | `categoriaEfetiva()` |
+| `src/lib/pricing/price-category.test.ts` | testes da herança |
+| `src/app/(app)/admin/produtos/[id]/actions.ts` | `saveOption`, `saveGroup` |
+| `src/app/(app)/admin/produtos/[id]/page.tsx` | fetch `price_categories`, prop |
+| `src/app/(app)/admin/produtos/[id]/option-row.tsx` | select com herança |
+| `src/app/(app)/admin/produtos/[id]/group-card.tsx` | select padrão do grupo |
+| `src/app/(app)/admin/produtos/actions.ts` | preço base |
+| `src/app/(app)/admin/produtos/page.tsx` | fetch `price_categories`, prop |
+| `src/app/(app)/admin/produtos/product-form.tsx` | select do preço base |
