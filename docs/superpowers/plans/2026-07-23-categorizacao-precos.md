@@ -1027,5 +1027,7 @@ git commit -m "feat: categoria da opção com herança do grupo"
 - [ ] `npm run lint` — sem erros
 - [ ] `npm run build` — build limpo
 - [ ] Um produto, um grupo e uma opção salvos com categoria; recarregar a página e confirmar que todos voltam marcados
-- [ ] `git log --oneline` mostra os 6 commits das tasks
+- [ ] `git log --oneline` mostra os 8 commits da rodada: os 6 das tasks mais `fix(db): índices
+  faltantes em price_category_id` (correção dos índices FK) e `docs: corrige base da verificação
+  final para a develop` (correção da base de comparação usada no item abaixo)
 - [ ] `src/lib/pricing/calc.ts` não aparece em `git diff 0c87c39..HEAD --name-only` (base da rodada na `develop`; não usar `build-v1`, que traz commits anteriores ao plano)

@@ -27,13 +27,12 @@ export default async function ProdutosPage({ searchParams }: {
     .order('sort_order')
     .order('name')
   if (q) query = query.ilike('name', `%${q}%`)
-  const { data } = await query
+  const [{ data }, { data: categoryData }] = await Promise.all([
+    query,
+    supabase.from('price_categories').select('*').order('sort_order'),
+  ])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const products = (data ?? []) as any[]
-  const { data: categoryData } = await supabase
-    .from('price_categories')
-    .select('*')
-    .order('sort_order')
   const categories = (categoryData ?? []) as unknown as PriceCategory[]
 
   return (

@@ -82,8 +82,9 @@ regra. Nenhuma entidade nova.
 Três seletores, todos no mesmo padrão de auto-save já usado pelos campos de surcharge.
 
 **Opção** — `src/app/(app)/admin/produtos/[id]/option-row.tsx`: `<select>` "Categoria" ao lado
-de tipo/valor. Primeira entrada vazia = "— herdar do grupo —". Quando vazio, o select exibe em
-cinza a categoria herdada do grupo.
+de tipo/valor. Primeira entrada vazia mostra o resultado da herança: `Herda: {nome da categoria
+do grupo}` quando o grupo tem categoria, `— sem categoria —` quando nem o grupo tem. Quando
+vazio, o select exibe esse rótulo em cinza.
 
 **Grupo** — `src/app/(app)/admin/produtos/[id]/group-modals.tsx`, no `GroupFormModal`: `<select>`
 "Categoria padrão" junto de nome e "seleção obrigatória". Entrada vazia = "— sem categoria —".
@@ -133,12 +134,18 @@ alteração.
 - `models.surcharge`.
 - Split de um preço em vários valores (insumo + repasse + custo) e a escolha entre % e R$.
 - Tela de administração das categorias — o seed é fixo; categoria nova entra por migration.
+- Templates de grupo. `applyTemplate` e `saveGroupAsTemplate` (em
+  `src/app/(app)/admin/produtos/[id]/actions.ts`) copiam as opções sem a categoria, e as tabelas
+  `option_group_templates` e `option_templates` não têm a coluna `price_category_id`. Salvar um
+  grupo categorizado como template e reaplicá-lo devolve as opções sem categoria — não corrompe
+  nada ("sem categoria" é estado válido), mas é uma lacuna real que esta entrega não fechou.
 
 ## Arquivos
 
 | Arquivo | Mudança |
 |---|---|
 | `supabase/migrations/0029_price_categories.sql` | tabela, seed, 3 FKs, RLS |
+| `supabase/migrations/0030_price_category_indexes.sql` | índices das 3 FKs (`options_price_category_idx`, `option_groups_price_category_idx`, `product_types_price_category_idx`) |
 | `src/lib/config-types.ts` | `PriceCategory`; `price_category_id` nos 3 types |
 | `src/lib/pricing/price-category.ts` | `categoriaEfetiva()`, `categoryName()` |
 | `src/lib/pricing/price-category.test.ts` | testes da herança e do rótulo |
@@ -153,3 +160,20 @@ alteração.
 | `src/app/(app)/admin/produtos/actions.ts` | preço base |
 | `src/app/(app)/admin/produtos/page.tsx` | fetch `price_categories`, prop |
 | `src/app/(app)/admin/produtos/product-form.tsx` | select do preço base |
+
+## Questões abertas para o próximo fluxo
+
+Pontos que a revisão final desta entrega levantou e que o autor do próximo spec (margem /
+financeiro / compras) precisa resolver antes de construir em cima:
+
+- `models.surcharge` (decisão explícita desta entrega), `quote_items.extra_value` e o desconto
+  do orçamento (migration 0026) não têm categoria. Consequência: a soma por categoria não fecha
+  com o total do orçamento. Decidir se viram "não categorizado" explícito ou se ganham marcação.
+- Produto com `pricing_mode = 'manual'` não tem `base_price` nem `price_per_m2` — o valor é
+  digitado pelo vendedor no orçamento —, mas o select de categoria aparece igual. Não está
+  definido se a categoria do produto vale para esse preço manual.
+- O snapshot do orçamento (`quote_items.selected_options`) não guarda a categoria, então
+  qualquer rollup histórico precisa de join de volta no catálogo, que é mutável: números de
+  meses passados mudam quando alguém reclassifica um grupo, e opções deletadas ficam sem
+  categoria.
+- Templates de grupo não carregam categoria (ver "Fora de escopo" acima).
