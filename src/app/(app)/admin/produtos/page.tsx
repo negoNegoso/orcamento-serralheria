@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth'
+import type { PriceCategory } from '@/lib/config-types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
@@ -29,6 +30,11 @@ export default async function ProdutosPage({ searchParams }: {
   const { data } = await query
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const products = (data ?? []) as any[]
+  const { data: categoryData } = await supabase
+    .from('price_categories')
+    .select('*')
+    .order('sort_order')
+  const categories = (categoryData ?? []) as unknown as PriceCategory[]
 
   return (
     <div className="space-y-4">
@@ -41,7 +47,7 @@ export default async function ProdutosPage({ searchParams }: {
           </p>
         }
       >
-        <ProductForm action={saveProduct} />
+        <ProductForm action={saveProduct} categories={categories} />
       </NewProductPanel>
 
       {products.length === 0 ? (
