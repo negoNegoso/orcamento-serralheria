@@ -90,6 +90,7 @@ export function GroupEditor({
   )
 
   function onDragEnd(event: DragEndEvent) {
+    setReorderError('')
     const { active, over } = event
     if (!over || active.id === over.id) return
     const prev = groupIds

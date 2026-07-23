@@ -77,6 +77,7 @@ export function OptionRowItem({
     })
     try {
       await saveOption(fd)
+      onError('')
     } catch {
       setLabel(option.label)
       setType(option.surcharge_type)
@@ -105,6 +106,7 @@ export function OptionRowItem({
     fd.set('id', option.id)
     try {
       await deleteOption(fd)
+      onError('')
     } catch {
       setRemoved(false)
       onError('Erro ao excluir, tente novamente')
@@ -213,6 +215,7 @@ export function NewOptionRow({
     })
     try {
       await saveOption(fd)
+      onError('')
       onDone()
     } catch {
       setSaving(false)
@@ -220,18 +223,22 @@ export function NewOptionRow({
     }
   }
 
-  function onLabelBlur() {
+  function onRowBlur(e: React.FocusEvent<HTMLLIElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
     if (!label.trim()) onDone() // blur vazio cancela
     else void save()
   }
 
   return (
-    <li className="flex items-center gap-2 pl-6" onKeyDown={e => e.key === 'Escape' && onDone()}>
+    <li
+      className="flex items-center gap-2 pl-6"
+      onKeyDown={e => e.key === 'Escape' && onDone()}
+      onBlur={onRowBlur}
+    >
       <Input
         ref={labelRef}
         value={label}
         onChange={e => setLabel(e.target.value)}
-        onBlur={onLabelBlur}
         placeholder="Nova opção"
         disabled={saving}
         className="min-w-32 flex-1"

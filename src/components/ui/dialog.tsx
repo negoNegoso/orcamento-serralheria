@@ -20,7 +20,7 @@ function DialogContent({
       <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50" />
       <DialogPrimitive.Popup
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-background shadow-lg',
+          'fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-background shadow-lg max-h-[85vh] overflow-y-auto',
           className
         )}
       >

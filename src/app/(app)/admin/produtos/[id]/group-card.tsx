@@ -50,6 +50,7 @@ export function GroupCard({
   )
 
   function onDragEnd(event: DragEndEvent) {
+    setError('')
     const { active, over } = event
     if (!over || active.id === over.id) return
     const prev = optionIds
