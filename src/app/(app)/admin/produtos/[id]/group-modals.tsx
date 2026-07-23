@@ -24,9 +24,11 @@ export function GroupFormModal({
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
   const [prevOpen, setPrevOpen] = useState(open)
+  const [prevGroup, setPrevGroup] = useState(group)
 
-  if (open !== prevOpen) {
+  if (open !== prevOpen || group !== prevGroup) {
     setPrevOpen(open)
+    setPrevGroup(group)
     if (open) {
       setName(group?.name ?? '')
       setRequired(group?.required ?? false)
