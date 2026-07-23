@@ -14,7 +14,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
-import type { GroupTemplateRow, OptionGroupRow } from '@/lib/config-types'
+import type { GroupTemplateRow, OptionGroupRow, PriceCategory } from '@/lib/config-types'
 import { reorderGroups } from './actions'
 import { GroupCard } from './group-card'
 import { ApplyTemplateModal, ConfirmDeleteGroupModal, GroupFormModal } from './group-modals'
@@ -22,11 +22,13 @@ import { ApplyTemplateModal, ConfirmDeleteGroupModal, GroupFormModal } from './g
 function SortableGroupCard({
   productId,
   group,
+  categories,
   onEdit,
   onDelete,
 }: {
   productId: string
   group: OptionGroupRow
+  categories: PriceCategory[]
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -40,6 +42,7 @@ function SortableGroupCard({
       <GroupCard
         productId={productId}
         group={group}
+        categories={categories}
         onEdit={onEdit}
         onDelete={onDelete}
         dragHandle={
@@ -62,10 +65,12 @@ export function GroupEditor({
   productId,
   groups,
   templates,
+  categories,
 }: {
   productId: string
   groups: OptionGroupRow[]
   templates: GroupTemplateRow[]
+  categories: PriceCategory[]
 }) {
   const [groupIds, setGroupIds] = useState(groups.map(g => g.id))
   const [reorderError, setReorderError] = useState('')
@@ -145,6 +150,7 @@ export function GroupEditor({
                   key={id}
                   productId={productId}
                   group={group}
+                  categories={categories}
                   onEdit={() => {
                     setFormGroup(group)
                     setFormOpen(true)
@@ -159,7 +165,13 @@ export function GroupEditor({
           </div>
         </SortableContext>
       </DndContext>
-      <GroupFormModal productId={productId} group={formGroup} open={formOpen} onOpenChange={setFormOpen} />
+      <GroupFormModal
+        productId={productId}
+        group={formGroup}
+        categories={categories}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+      />
       <ApplyTemplateModal
         productId={productId}
         templates={templates}

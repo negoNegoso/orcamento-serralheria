@@ -5,22 +5,25 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import type { GroupTemplateRow, OptionGroupRow } from '@/lib/config-types'
+import type { GroupTemplateRow, OptionGroupRow, PriceCategory } from '@/lib/config-types'
 import { applyTemplate, deleteGroup, saveGroup, saveGroupAsTemplate } from './actions'
 
 export function GroupFormModal({
   productId,
   group,
+  categories,
   open,
   onOpenChange,
 }: {
   productId: string
   group: OptionGroupRow | null
+  categories: PriceCategory[]
   open: boolean
   onOpenChange: (o: boolean) => void
 }) {
   const [name, setName] = useState(group?.name ?? '')
   const [required, setRequired] = useState(group?.required ?? false)
+  const [categoryId, setCategoryId] = useState(group?.price_category_id ?? '')
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
   const [prevOpen, setPrevOpen] = useState(open)
@@ -32,6 +35,7 @@ export function GroupFormModal({
     if (open) {
       setName(group?.name ?? '')
       setRequired(group?.required ?? false)
+      setCategoryId(group?.price_category_id ?? '')
       setError('')
     }
   }
@@ -48,6 +52,7 @@ export function GroupFormModal({
       fd.set('name', name)
       if (required) fd.set('required', 'on')
       fd.set('sort_order', String(group?.sort_order ?? 0))
+      fd.set('price_category_id', categoryId)
       try {
         await saveGroup(fd)
         onOpenChange(false)
@@ -89,6 +94,24 @@ export function GroupFormModal({
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={required} onCheckedChange={setRequired} /> Seleção obrigatória
+          </label>
+          <label className="block space-y-1">
+            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Categoria padrão
+            </span>
+            <select
+              value={categoryId}
+              onChange={e => setCategoryId(e.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              aria-label="Categoria padrão do grupo"
+            >
+              <option value="">— sem categoria —</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </label>
           {error && (
             <p className="text-sm text-destructive" role="alert">
