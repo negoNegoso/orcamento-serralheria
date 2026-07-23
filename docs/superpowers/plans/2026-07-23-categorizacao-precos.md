@@ -1028,4 +1028,4 @@ git commit -m "feat: categoria da opção com herança do grupo"
 - [ ] `npm run build` — build limpo
 - [ ] Um produto, um grupo e uma opção salvos com categoria; recarregar a página e confirmar que todos voltam marcados
 - [ ] `git log --oneline` mostra os 6 commits das tasks
-- [ ] `src/lib/pricing/calc.ts` não aparece em `git diff build-v1...HEAD --name-only`
+- [ ] `src/lib/pricing/calc.ts` não aparece em `git diff 0c87c39..HEAD --name-only` (base da rodada na `develop`; não usar `build-v1`, que traz commits anteriores ao plano)
