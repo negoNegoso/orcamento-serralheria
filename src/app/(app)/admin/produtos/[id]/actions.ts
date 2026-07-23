@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { getCompany, getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
+import { buildSortUpdates } from '@/lib/reorder'
 
 function reval(fd: FormData) {
   revalidatePath(`/admin/produtos/${String(fd.get('product_id'))}`)
@@ -166,4 +167,40 @@ export async function saveGroupAsTemplate(fd: FormData) {
   }
   revalidatePath('/admin/templates')
   reval(fd)
+}
+
+export async function reorderGroups(productId: string, ids: string[]) {
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
+  const results = await Promise.all(
+    buildSortUpdates(ids).map(({ id, sort_order }) =>
+      supabase
+        .from('option_groups')
+        .update({ sort_order })
+        .eq('id', id)
+        .eq('company_id', company.id)
+        .eq('product_type_id', productId)
+    )
+  )
+  const failed = results.find(r => r.error)
+  if (failed?.error) throw new Error(failed.error.message)
+  revalidatePath(`/admin/produtos/${productId}`)
+}
+
+export async function reorderOptions(productId: string, groupId: string, ids: string[]) {
+  const { supabase, company } = await getCompany()
+  if (!company) throw new Error('Sem empresa ativa')
+  const results = await Promise.all(
+    buildSortUpdates(ids).map(({ id, sort_order }) =>
+      supabase
+        .from('options')
+        .update({ sort_order })
+        .eq('id', id)
+        .eq('company_id', company.id)
+        .eq('group_id', groupId)
+    )
+  )
+  const failed = results.find(r => r.error)
+  if (failed?.error) throw new Error(failed.error.message)
+  revalidatePath(`/admin/produtos/${productId}`)
 }
