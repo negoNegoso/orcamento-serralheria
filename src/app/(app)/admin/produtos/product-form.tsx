@@ -3,9 +3,18 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubmitButton } from '@/components/ui/submit-button'
+import type { PriceCategory } from '@/lib/config-types'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ProductForm({ product, action }: { product?: any; action: (fd: FormData) => Promise<void> }) {
+export function ProductForm({
+  product,
+  action,
+  categories,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  product?: any
+  action: (fd: FormData) => Promise<void>
+  categories: PriceCategory[]
+}) {
   const [mode, setMode] = useState<'m2' | 'm2_direto' | 'fixo' | 'manual'>(product?.pricing_mode ?? 'm2')
   return (
     <form action={action} className="space-y-3 rounded border p-3">
@@ -43,6 +52,22 @@ export function ProductForm({ product, action }: { product?: any; action: (fd: F
           Sem preço tabelado: a responsável orça e o vendedor digita o valor combinado ao montar o orçamento.
         </p>
       )}
+      <div className="space-y-1">
+        <Label htmlFor={`cat-${product?.id ?? 'new'}`}>Categoria do preço</Label>
+        <select
+          id={`cat-${product?.id ?? 'new'}`}
+          name="price_category_id"
+          defaultValue={product?.price_category_id ?? ''}
+          className="w-full rounded border bg-background p-2"
+        >
+          <option value="">— sem categoria —</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="flex items-center gap-4">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="active" defaultChecked={product?.active ?? true} /> Ativo

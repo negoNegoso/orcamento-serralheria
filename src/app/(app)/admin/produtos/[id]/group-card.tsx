@@ -14,19 +14,22 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
-import type { OptionGroupRow } from '@/lib/config-types'
+import type { OptionGroupRow, PriceCategory } from '@/lib/config-types'
+import { categoryName } from '@/lib/pricing/price-category'
 import { reorderOptions } from './actions'
 import { NewOptionRow, OptionRowItem } from './option-row'
 
 export function GroupCard({
   productId,
   group,
+  categories,
   dragHandle,
   onEdit,
   onDelete,
 }: {
   productId: string
   group: OptionGroupRow
+  categories: PriceCategory[]
   dragHandle?: React.ReactNode
   onEdit: () => void
   onDelete: () => void
@@ -63,6 +66,7 @@ export function GroupCard({
   }
 
   const optionsById = new Map(group.options.map(o => [o.id, o]))
+  const groupCategory = categoryName(categories, group.price_category_id)
 
   return (
     <div className="space-y-3 rounded-lg border bg-background p-4">
@@ -70,6 +74,7 @@ export function GroupCard({
         {dragHandle}
         <h3 className="font-bold">{group.name}</h3>
         {group.required && <Badge className="bg-primary/10 text-primary">Obrigatório</Badge>}
+        {groupCategory && <Badge variant="secondary">{groupCategory}</Badge>}
         <div className="ml-auto flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Editar grupo">
             <Icon name="edit" className="text-lg" />
@@ -96,6 +101,8 @@ export function GroupCard({
                   productId={productId}
                   groupId={group.id}
                   option={option}
+                  categories={categories}
+                  groupCategoryId={group.price_category_id}
                   onError={setError}
                 />
               )
@@ -104,6 +111,8 @@ export function GroupCard({
               <NewOptionRow
                 productId={productId}
                 groupId={group.id}
+                categories={categories}
+                groupCategoryId={group.price_category_id}
                 nextSortOrder={group.options.length}
                 onDone={() => setAdding(false)}
                 onError={setError}
