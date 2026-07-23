@@ -196,6 +196,7 @@ export function NewOptionRow({
   const [value, setValue] = useState('0')
   const [saving, setSaving] = useState(false)
   const labelRef = useRef<HTMLInputElement>(null)
+  const cancelledRef = useRef(false)
 
   useEffect(() => {
     labelRef.current?.focus()
@@ -224,6 +225,7 @@ export function NewOptionRow({
   }
 
   function onRowBlur(e: React.FocusEvent<HTMLLIElement>) {
+    if (cancelledRef.current) return
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
     if (!label.trim()) onDone() // blur vazio cancela
     else void save()
@@ -232,7 +234,12 @@ export function NewOptionRow({
   return (
     <li
       className="flex items-center gap-2 pl-6"
-      onKeyDown={e => e.key === 'Escape' && onDone()}
+      onKeyDown={e => {
+        if (e.key === 'Escape') {
+          cancelledRef.current = true
+          onDone()
+        }
+      }}
       onBlur={onRowBlur}
     >
       <Input
