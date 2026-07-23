@@ -101,6 +101,8 @@ export function GroupCard({
                   productId={productId}
                   groupId={group.id}
                   option={option}
+                  categories={categories}
+                  groupCategoryId={group.price_category_id}
                   onError={setError}
                 />
               )
@@ -109,6 +111,8 @@ export function GroupCard({
               <NewOptionRow
                 productId={productId}
                 groupId={group.id}
+                categories={categories}
+                groupCategoryId={group.price_category_id}
                 nextSortOrder={group.options.length}
                 onDone={() => setAdding(false)}
                 onError={setError}
