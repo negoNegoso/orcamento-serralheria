@@ -6,7 +6,7 @@ import { Icon } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import type { ModelRow } from '@/lib/config-types'
-import { deleteModel, saveModel } from './actions'
+import { saveModel } from './actions'
 
 const selectClass =
   'h-8 rounded-lg border border-border bg-background px-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
