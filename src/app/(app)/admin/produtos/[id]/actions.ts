@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { getCompany, getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
 import { buildSortUpdates } from '@/lib/reorder'
+import { parseCategoryId } from '@/lib/pricing/price-category-input'
 
 function reval(fd: FormData) {
   revalidatePath(`/admin/produtos/${String(fd.get('product_id'))}`)
@@ -17,6 +18,7 @@ export async function saveGroup(fd: FormData) {
     name: String(fd.get('name') ?? '').trim(),
     required: fd.get('required') === 'on',
     sort_order: Number(fd.get('sort_order') ?? 0),
+    price_category_id: parseCategoryId(fd.get('price_category_id')),
     company_id: company.id,
   }
   if (!row.name) throw new Error('Nome obrigatório')
@@ -44,6 +46,7 @@ export async function saveOption(fd: FormData) {
     surcharge_type: String(fd.get('surcharge_type')) as 'fixo' | 'por_m2',
     surcharge_value: parseDecimal(String(fd.get('surcharge_value') ?? '0')),
     sort_order: Number(fd.get('sort_order') ?? 0),
+    price_category_id: parseCategoryId(fd.get('price_category_id')),
     active: fd.get('active') === 'on',
     company_id: company.id,
   }

@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { getCompany, getProfile } from '@/lib/auth'
 import { parseDecimal } from '@/lib/format'
+import { parseCategoryId } from '@/lib/pricing/price-category-input'
 
 export async function saveProduct(formData: FormData) {
   const { supabase, company } = await getCompany()
@@ -15,6 +16,7 @@ export async function saveProduct(formData: FormData) {
     base_price: mode === 'fixo' ? parseDecimal(String(formData.get('base_price') ?? '0')) : null,
     active: formData.get('active') === 'on',
     sort_order: Number(formData.get('sort_order') ?? 0),
+    price_category_id: parseCategoryId(formData.get('price_category_id')),
     company_id: company.id,
   }
   if (!row.name) throw new Error('Nome obrigatório')
