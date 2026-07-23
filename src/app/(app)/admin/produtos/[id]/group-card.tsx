@@ -84,7 +84,7 @@ export function GroupCard({
           {error}
         </p>
       )}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext id={`opts-${group.id}`} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={optionIds} strategy={verticalListSortingStrategy}>
           <ul className="space-y-2">
             {optionIds.map(id => {

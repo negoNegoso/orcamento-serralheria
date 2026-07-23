@@ -134,7 +134,7 @@ export function GroupEditor({
           Nenhum grupo de opções. Adicione um grupo ou aplique um template.
         </p>
       )}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext id="groups" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-4">
             {groupIds.map(id => {
