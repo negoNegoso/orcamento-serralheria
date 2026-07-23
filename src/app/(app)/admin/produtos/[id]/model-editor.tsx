@@ -1,51 +1,142 @@
+// src/app/(app)/admin/produtos/[id]/model-editor.tsx
 'use client'
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { SubmitButton } from '@/components/ui/submit-button'
-import { PhotoUpload } from '@/components/admin/photo-upload'
+import { useState, useTransition } from 'react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
+import { Icon } from '@/components/ui/icon'
 import type { ModelRow } from '@/lib/config-types'
-import { deleteModel, saveModel } from './actions'
+import { deleteModel } from './actions'
+import { ModelCardItem, NewModelCard } from './model-card'
 
-function ModelForm({ productId, model, companyId }: { productId: string; model?: ModelRow; companyId: string }) {
-  const [photo, setPhoto] = useState<string | null>(model?.photo_url ?? null)
+export function ModelEditor({
+  productId,
+  models,
+  companyId,
+}: {
+  productId: string
+  models: ModelRow[]
+  companyId: string
+}) {
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<ModelRow | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  function onCardError(msg: string) {
+    const del = msg.match(/^__delete__:(.+)$/)
+    if (del) {
+      const target = models.find(m => m.id === del[1]) ?? null
+      setDeleteTarget(target)
+      setDeleteOpen(true)
+      return
+    }
+    setError(msg)
+  }
+
   return (
-    <form action={saveModel} className="space-y-2 rounded border p-3">
-      <input type="hidden" name="product_id" value={productId} />
-      {model && <input type="hidden" name="id" value={model.id} />}
-      <input type="hidden" name="photo_url" value={photo ?? ''} />
-      <div className="flex flex-wrap items-end gap-2">
-        <Input name="name" defaultValue={model?.name ?? ''} placeholder="Nome do modelo" className="w-44" required />
-        <select name="surcharge_type" defaultValue={model?.surcharge_type ?? 'fixo'} className="rounded border bg-background p-2 text-sm" aria-label="Tipo do adicional">
-          <option value="fixo">R$ fixo</option>
-          <option value="por_m2">R$ por m²</option>
-        </select>
-        <Input name="surcharge" inputMode="decimal" defaultValue={model?.surcharge ?? 0} className="w-24" aria-label="Adicional" />
-        <label className="flex items-center gap-1 text-sm">
-          <input type="checkbox" name="active" defaultChecked={model?.active ?? true} /> Ativo
-        </label>
-        <Input name="sort_order" type="number" defaultValue={model?.sort_order ?? 0} className="w-16" aria-label="Ordem" />
-        <SubmitButton size="sm">{model ? 'Salvar' : 'Adicionar modelo'}</SubmitButton>
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="font-semibold">Modelos</h2>
+        <Button
+          className="ml-auto"
+          onClick={() => {
+            setError('')
+            setAdding(true)
+          }}
+        >
+          <Icon name="add" className="text-base" /> Adicionar modelo
+        </Button>
       </div>
-      <PhotoUpload folder={`${companyId}/modelos`} value={photo} onChange={setPhoto} />
-    </form>
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+        {models.map(m => (
+          <ModelCardItem
+            key={m.id}
+            productId={productId}
+            companyId={companyId}
+            model={m}
+            onError={onCardError}
+          />
+        ))}
+        {adding && (
+          <NewModelCard
+            productId={productId}
+            companyId={companyId}
+            nextSortOrder={models.length}
+            onDone={() => setAdding(false)}
+            onError={onCardError}
+          />
+        )}
+      </div>
+      <ConfirmDeleteModelModal
+        productId={productId}
+        model={deleteTarget}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+      />
+    </section>
   )
 }
 
-export function ModelEditor({ productId, models, companyId }: { productId: string; models: ModelRow[]; companyId: string }) {
+function ConfirmDeleteModelModal({
+  productId,
+  model,
+  open,
+  onOpenChange,
+}: {
+  productId: string
+  model: ModelRow | null
+  open: boolean
+  onOpenChange: (o: boolean) => void
+}) {
+  const [error, setError] = useState('')
+  const [prevOpen, setPrevOpen] = useState(open)
+  const [pending, startTransition] = useTransition()
+
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) setError('')
+  }
+
+  function confirm() {
+    if (!model) return
+    startTransition(async () => {
+      const fd = new FormData()
+      fd.set('product_id', productId)
+      fd.set('id', model.id)
+      try {
+        await deleteModel(fd)
+        onOpenChange(false)
+      } catch {
+        setError('Erro ao excluir, tente novamente')
+      }
+    })
+  }
+
   return (
-    <section className="space-y-3">
-      <h2 className="font-semibold">Modelos (galeria para o cliente)</h2>
-      {models.map(m => (
-        <div key={m.id} className="space-y-1">
-          <ModelForm productId={productId} model={m} companyId={companyId} />
-          <form action={deleteModel}>
-            <input type="hidden" name="product_id" value={productId} />
-            <input type="hidden" name="id" value={m.id} />
-            <SubmitButton variant="link" className="h-auto px-0 text-xs text-red-600 underline">excluir modelo</SubmitButton>
-          </form>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent title="Excluir Modelo">
+        <div className="space-y-4">
+          <p className="text-sm">
+            Excluir o modelo <strong>{model?.name}</strong>? Essa ação não pode ser desfeita.
+          </p>
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <DialogClose render={<Button variant="secondary" disabled={pending}>Cancelar</Button>} />
+            <Button variant="destructive" onClick={confirm} disabled={pending}>
+              Excluir
+            </Button>
+          </div>
         </div>
-      ))}
-      <ModelForm productId={productId} companyId={companyId} />
-    </section>
+      </DialogContent>
+    </Dialog>
   )
 }
