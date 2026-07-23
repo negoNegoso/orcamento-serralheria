@@ -65,7 +65,7 @@ create policy pc_read on price_categories for select to authenticated using (tru
 A opção usa a própria categoria; se não tiver, herda a do grupo:
 
 ```
-categoriaEfetiva(opcao, grupo) = opcao.price_category_id ?? grupo.price_category_id ?? null
+categoriaEfetiva(optionCategoryId, groupCategoryId) = optionCategoryId ?? groupCategoryId ?? null
 ```
 
 Calculada na leitura, em `src/lib/pricing/price-category.ts`. Nada é copiado para a linha da
@@ -85,8 +85,11 @@ Três seletores, todos no mesmo padrão de auto-save já usado pelos campos de s
 de tipo/valor. Primeira entrada vazia = "— herdar do grupo —". Quando vazio, o select exibe em
 cinza a categoria herdada do grupo.
 
-**Grupo** — `src/app/(app)/admin/produtos/[id]/group-card.tsx`: `<select>` "Categoria padrão"
-no header. Entrada vazia = "— sem categoria —".
+**Grupo** — `src/app/(app)/admin/produtos/[id]/group-modals.tsx`, no `GroupFormModal`: `<select>`
+"Categoria padrão" junto de nome e "seleção obrigatória". Entrada vazia = "— sem categoria —".
+Vai no modal, e não solto no header do card, porque `saveGroup` grava a linha inteira — um
+`FormData` parcial vindo de um select isolado apagaria `name` e `required`. O `group-card.tsx`
+exibe a categoria como badge read-only ao lado do nome do grupo.
 
 **Preço base** — `src/app/(app)/admin/produtos/product-form.tsx`: `<select>` "Categoria" junto
 dos campos de preço.
@@ -109,7 +112,8 @@ segue como está.
 `src/lib/config-types.ts`: `price_category_id: string | null` em `OptionRow`, `OptionGroupRow`
 e `ProductConfig`. Novo `PriceCategory { id, slug, name, sort_order }`.
 
-Regenerar os types do Supabase depois da migration.
+Não há types gerados do Supabase no projeto (`src/lib/supabase/` só tem client, server e admin,
+sem `Database`), então não há regeneração a fazer.
 
 ## Testes
 
@@ -136,12 +140,16 @@ alteração.
 |---|---|
 | `supabase/migrations/0029_price_categories.sql` | tabela, seed, 3 FKs, RLS |
 | `src/lib/config-types.ts` | `PriceCategory`; `price_category_id` nos 3 types |
-| `src/lib/pricing/price-category.ts` | `categoriaEfetiva()` |
-| `src/lib/pricing/price-category.test.ts` | testes da herança |
+| `src/lib/pricing/price-category.ts` | `categoriaEfetiva()`, `categoryName()` |
+| `src/lib/pricing/price-category.test.ts` | testes da herança e do rótulo |
+| `src/lib/pricing/price-category-input.ts` | `parseCategoryId()` — select vazio vira `null` |
+| `src/lib/pricing/price-category-input.test.ts` | testes do parse de FormData |
 | `src/app/(app)/admin/produtos/[id]/actions.ts` | `saveOption`, `saveGroup` |
 | `src/app/(app)/admin/produtos/[id]/page.tsx` | fetch `price_categories`, prop |
 | `src/app/(app)/admin/produtos/[id]/option-row.tsx` | select com herança |
-| `src/app/(app)/admin/produtos/[id]/group-card.tsx` | select padrão do grupo |
+| `src/app/(app)/admin/produtos/[id]/group-editor.tsx` | repassa `categories` a card e modal |
+| `src/app/(app)/admin/produtos/[id]/group-modals.tsx` | select de categoria no `GroupFormModal` |
+| `src/app/(app)/admin/produtos/[id]/group-card.tsx` | badge da categoria + prop `categories` |
 | `src/app/(app)/admin/produtos/actions.ts` | preço base |
 | `src/app/(app)/admin/produtos/page.tsx` | fetch `price_categories`, prop |
 | `src/app/(app)/admin/produtos/product-form.tsx` | select do preço base |
