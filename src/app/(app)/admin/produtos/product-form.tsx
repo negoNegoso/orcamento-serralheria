@@ -1,82 +1,101 @@
 'use client'
 import { useState } from 'react'
+import { CostFields } from '@/components/admin/cost-fields'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubmitButton } from '@/components/ui/submit-button'
 import type { PriceCategory } from '@/lib/config-types'
+import type { PriceCost } from '@/lib/work-order/types'
+import { savePriceCosts } from './actions'
 
 export function ProductForm({
   product,
   action,
   categories,
+  costs = [],
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   product?: any
   action: (fd: FormData) => Promise<void>
   categories: PriceCategory[]
+  costs?: PriceCost[]
 }) {
   const [mode, setMode] = useState<'m2' | 'm2_direto' | 'fixo' | 'manual'>(product?.pricing_mode ?? 'm2')
   return (
-    <form action={action} className="space-y-3 rounded border p-3">
-      {product && <input type="hidden" name="id" value={product.id} />}
-      <div className="space-y-1">
-        <Label htmlFor={`name-${product?.id ?? 'new'}`}>Nome do produto</Label>
-        <Input id={`name-${product?.id ?? 'new'}`} name="name" defaultValue={product?.name ?? ''} required />
-      </div>
-      <div className="space-y-1">
-        <Label>Modo de preço</Label>
-        <select name="pricing_mode" value={mode} onChange={e => setMode(e.target.value as 'm2' | 'm2_direto' | 'fixo' | 'manual')}
-          className="w-full rounded border bg-background p-2">
-          <option value="m2">Por m² (largura × altura)</option>
-          <option value="m2_direto">Por m² (metragem direta)</option>
-          <option value="fixo">Preço fixo</option>
-          <option value="manual">Sob consulta (vendedor digita o valor no orçamento)</option>
-        </select>
-      </div>
-      {(mode === 'm2' || mode === 'm2_direto') && (
+    <div className="space-y-3">
+      <form action={action} className="space-y-3 rounded border p-3">
+        {product && <input type="hidden" name="id" value={product.id} />}
         <div className="space-y-1">
-          <Label htmlFor={`ppm2-${product?.id ?? 'new'}`}>Preço por m² (R$)</Label>
-          <Input id={`ppm2-${product?.id ?? 'new'}`} name="price_per_m2" inputMode="decimal"
-            defaultValue={product?.price_per_m2 ?? ''} required />
+          <Label htmlFor={`name-${product?.id ?? 'new'}`}>Nome do produto</Label>
+          <Input id={`name-${product?.id ?? 'new'}`} name="name" defaultValue={product?.name ?? ''} required />
         </div>
-      )}
-      {mode === 'fixo' && (
         <div className="space-y-1">
-          <Label htmlFor={`bp-${product?.id ?? 'new'}`}>Preço fixo (R$)</Label>
-          <Input id={`bp-${product?.id ?? 'new'}`} name="base_price" inputMode="decimal"
-            defaultValue={product?.base_price ?? ''} required />
+          <Label>Modo de preço</Label>
+          <select name="pricing_mode" value={mode} onChange={e => setMode(e.target.value as 'm2' | 'm2_direto' | 'fixo' | 'manual')}
+            className="w-full rounded border bg-background p-2">
+            <option value="m2">Por m² (largura × altura)</option>
+            <option value="m2_direto">Por m² (metragem direta)</option>
+            <option value="fixo">Preço fixo</option>
+            <option value="manual">Sob consulta (vendedor digita o valor no orçamento)</option>
+          </select>
         </div>
-      )}
-      {mode === 'manual' && (
-        <p className="text-sm text-muted-foreground">
-          Sem preço tabelado: a responsável orça e o vendedor digita o valor combinado ao montar o orçamento.
-        </p>
-      )}
-      <div className="space-y-1">
-        <Label htmlFor={`cat-${product?.id ?? 'new'}`}>Categoria do preço</Label>
-        <select
-          id={`cat-${product?.id ?? 'new'}`}
-          name="price_category_id"
-          defaultValue={product?.price_category_id ?? ''}
-          className="w-full rounded border bg-background p-2"
-        >
-          <option value="">— sem categoria —</option>
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="active" defaultChecked={product?.active ?? true} /> Ativo
-        </label>
-        <div className="flex items-center gap-2 text-sm">
-          Ordem <Input name="sort_order" type="number" className="w-20" defaultValue={product?.sort_order ?? 0} />
+        {(mode === 'm2' || mode === 'm2_direto') && (
+          <div className="space-y-1">
+            <Label htmlFor={`ppm2-${product?.id ?? 'new'}`}>Preço por m² (R$)</Label>
+            <Input id={`ppm2-${product?.id ?? 'new'}`} name="price_per_m2" inputMode="decimal"
+              defaultValue={product?.price_per_m2 ?? ''} required />
+          </div>
+        )}
+        {mode === 'fixo' && (
+          <div className="space-y-1">
+            <Label htmlFor={`bp-${product?.id ?? 'new'}`}>Preço fixo (R$)</Label>
+            <Input id={`bp-${product?.id ?? 'new'}`} name="base_price" inputMode="decimal"
+              defaultValue={product?.base_price ?? ''} required />
+          </div>
+        )}
+        {mode === 'manual' && (
+          <p className="text-sm text-muted-foreground">
+            Sem preço tabelado: a responsável orça e o vendedor digita o valor combinado ao montar o orçamento.
+          </p>
+        )}
+        <div className="space-y-1">
+          <Label htmlFor={`cat-${product?.id ?? 'new'}`}>Categoria do preço</Label>
+          <select
+            id={`cat-${product?.id ?? 'new'}`}
+            name="price_category_id"
+            defaultValue={product?.price_category_id ?? ''}
+            className="w-full rounded border bg-background p-2"
+          >
+            <option value="">— sem categoria —</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-      <SubmitButton size="sm">{product ? 'Salvar' : 'Adicionar produto'}</SubmitButton>
-    </form>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="active" defaultChecked={product?.active ?? true} /> Ativo
+          </label>
+          <div className="flex items-center gap-2 text-sm">
+            Ordem <Input name="sort_order" type="number" className="w-20" defaultValue={product?.sort_order ?? 0} />
+          </div>
+        </div>
+        <SubmitButton size="sm">{product ? 'Salvar' : 'Adicionar produto'}</SubmitButton>
+      </form>
+      {mode !== 'manual' && product && (
+        <form action={savePriceCosts} className="space-y-2">
+          <input type="hidden" name="product_type_id" value={product.id} />
+          <CostFields
+            categories={categories}
+            costs={costs}
+            unit={mode === 'fixo' ? 'R$' : 'R$/m²'}
+            idPrefix={`p-${product.id}`}
+          />
+          <SubmitButton size="sm" variant="outline">Salvar custo esperado</SubmitButton>
+        </form>
+      )}
+    </div>
   )
 }

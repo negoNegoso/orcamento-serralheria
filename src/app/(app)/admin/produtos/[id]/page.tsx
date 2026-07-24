@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getCompany } from '@/lib/auth'
 import type { GroupTemplateRow, PriceCategory, ProductConfig } from '@/lib/config-types'
+import { fetchPriceCosts } from '@/lib/work-order/queries'
 import { saveProduct } from '../actions'
 import { ProductForm } from '../product-form'
 import { GroupEditor } from './group-editor'
@@ -9,7 +10,7 @@ import { ModelEditor } from './model-editor'
 export default async function ProdutoDetalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { supabase, company } = await getCompany()
-  const [{ data }, { data: templateData }, { data: categoryData }] = await Promise.all([
+  const [{ data }, { data: templateData }, { data: categoryData }, priceCosts] = await Promise.all([
     supabase.from('product_types')
       .select('*, option_groups(*, options(*)), models(*)')
       .eq('id', id).single(),
@@ -19,6 +20,7 @@ export default async function ProdutoDetalhe({ params }: { params: Promise<{ id:
     supabase.from('price_categories')
       .select('*')
       .order('sort_order'),
+    fetchPriceCosts(supabase),
   ])
   if (!data) notFound()
   const product = data as unknown as ProductConfig
@@ -30,7 +32,12 @@ export default async function ProdutoDetalhe({ params }: { params: Promise<{ id:
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">{product.name}</h1>
-      <ProductForm product={product} action={saveProduct} categories={categories} />
+      <ProductForm
+        product={product}
+        action={saveProduct}
+        categories={categories}
+        costs={priceCosts.filter(c => c.product_type_id === product.id)}
+      />
       <GroupEditor
         productId={product.id}
         groups={product.option_groups}
