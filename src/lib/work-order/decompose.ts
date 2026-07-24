@@ -143,7 +143,7 @@ export function decomposeItem(
   if (input.extraValue !== 0) {
     const extra = round2(input.extraValue * multiplier)
     vendaSum = round2(vendaSum + extra)
-    push('Ajuste do item', null, extra, 'venda')
+    push('Ajuste do item', null, extra, 'estrutural')
   }
 
   // resíduo: surcharge do modelo (não persistido) + sobra de arredondamento
@@ -152,7 +152,7 @@ export function decomposeItem(
   if (residual !== 0) {
     push(
       input.modelName ? `Modelo ${input.modelName}` : 'Ajuste de arredondamento',
-      null, residual, 'venda',
+      null, residual, 'estrutural',
     )
   }
 

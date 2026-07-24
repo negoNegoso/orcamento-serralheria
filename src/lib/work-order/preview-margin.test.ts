@@ -53,4 +53,14 @@ describe('previewMargin', () => {
   it('lista vazia devolve zeros', () => {
     expect(previewMargin([], 0, 1)).toEqual({ predictedMargin: 0, plannedTotal: 0, uncostedCount: 0 })
   })
+
+  it('linha estrutural (modelo/ajuste) nunca conta como sem custo', () => {
+    const r = previewMargin([item({
+      lineTotal: 900, modelName: 'Colonial', extraValue: 100,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 180 }],
+    })], 900, 1)
+    // base tem custo; ajuste (100) e resíduo do modelo (200) são estruturais
+    expect(r.uncostedCount).toBe(0)
+    expect(r.plannedTotal).toBe(480)
+  })
 })

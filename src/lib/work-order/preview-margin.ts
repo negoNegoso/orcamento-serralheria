@@ -27,11 +27,9 @@ export function previewMargin(
   for (const item of items) {
     for (const line of decomposeItem(item, multiplier)) {
       plannedTotal = round2(plannedTotal + line.plannedValue)
-      // resíduo e ajuste não são preços cadastráveis: não contam como pendência
-      if (line.plannedKind === 'venda'
-        && line.description !== 'Ajuste do item'
-        && !line.description.startsWith('Modelo ')
-        && line.description !== 'Ajuste de arredondamento') {
+      // linha estrutural (modelo, ajuste do item, arredondamento) não tem preço
+      // cadastrável: não conta como pendência
+      if (line.plannedKind === 'venda') {
         uncostedCount++
       }
     }

@@ -86,14 +86,18 @@ create policy pcost_all on price_costs for all to authenticated
 
 ```sql
 alter table work_order_costs add column planned_kind text not null default 'venda'
-  check (planned_kind in ('custo','venda'));
+  check (planned_kind in ('custo','venda','estrutural'));
 ```
 
 - `'custo'`: linha planejada a partir de componente cadastrado — planejado é custo esperado.
-- `'venda'`: fallback (sem custo cadastrado) e linhas estruturais (modelo/resíduo,
-  `extra_value`) — planejado é o preço de venda, contribuição de margem zero.
-- Distingue sem ambiguidade "custo cadastrado igual à venda" de "sem cadastro" e alimenta
-  o aviso na tela. Default `'venda'` deixa as linhas existentes semanticamente corretas.
+- `'venda'`: fallback (sem custo cadastrado para um preço real) — planejado é o preço de
+  venda, contribuição de margem zero, entra na contagem de "sem custo cadastrado".
+- `'estrutural'`: linha sem preço cadastrável (modelo/resíduo, `extra_value`, ajuste de
+  arredondamento) — planejado é o preço de venda, mas nunca conta como pendência nem ganha
+  o aviso, porque não há onde cadastrar custo nela.
+- Distingue sem ambiguidade "custo cadastrado igual à venda" de "sem cadastro" de "linha sem
+  preço cadastrável", sem depender de sniffing na descrição. Default `'venda'` deixa as
+  linhas já existentes semanticamente corretas.
 - `planned_kind` entra no `woc_frozen_guard` (imutável após criação), junto de
   `planned_value` e `work_order_id`.
 
@@ -144,7 +148,9 @@ o preço é por m²):
 3. **Sem componentes** → uma linha exatamente como hoje: `planned_value = venda × fator`,
    categoria por herança (0029), `planned_kind = 'venda'`.
 4. Modelo (resíduo contra `line_total`), `extra_value` e ajuste de arredondamento:
-   inalterados, sempre `planned_kind = 'venda'`. O resíduo segue calculado contra a venda
+   inalterados, sempre `planned_kind = 'estrutural'` — não há preço cadastrável nessas
+   linhas, então nunca contam como pendência nem ganham o aviso. O resíduo segue calculado
+   contra a venda
    (`line_total × m − Σ valores de venda distribuídos`) — para isso o clone acumula a soma
    de venda separadamente da soma planejada, já que linhas `custo` não carregam a venda.
 
@@ -182,8 +188,9 @@ Ao lado do preço, quando há componentes: `custo 180 · margem 420 (70%)` em te
 ("Custo esperado ▸") com os 3 inputs, unidade conforme `surcharge_type`. Expansível porque
 a linha já carrega tipo/valor/categoria.
 
-**Tela da OS** — linha `planned_kind='venda'` ganha badge âmbar `sem custo cadastrado`.
-Cabeçalho ganha Margem prevista.
+**Tela da OS** — linha `planned_kind='venda'` ganha badge âmbar `sem custo cadastrado`
+(linha `'estrutural'` nunca ganha, porque não há custo cadastrável nela). Cabeçalho ganha
+Margem prevista.
 
 **Orçamento** — blocos descritos na seção anterior. Vendedor não vê nenhum dos dois.
 

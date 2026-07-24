@@ -241,7 +241,7 @@ describe('decomposeItem com custo esperado', () => {
     // venda distribuída = 1200; resíduo = 1500 − 1200 = 300 (o surcharge do modelo)
     expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
       ['Preço base — Insumo', 300, 'custo'],
-      ['Modelo Colonial', 300, 'venda'],
+      ['Modelo Colonial', 300, 'estrutural'],
     ])
   })
 
@@ -257,14 +257,14 @@ describe('decomposeItem com custo esperado', () => {
     expect(lines[lines.length - 1]).toMatchObject({ description: 'Modelo Colonial', plannedValue: 300 })
   })
 
-  it('ajuste do item continua venda e entra na soma do resíduo', () => {
+  it('ajuste do item é estrutural e entra na soma do resíduo', () => {
     const lines = decomposeItem(input({
       unitBasePrice: 1200, extraValue: -200, lineTotal: 1000,
       baseCosts: [{ priceCategoryId: 'cat-insumo', value: 500 }],
     }), 1)
     expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
       ['Preço base — Insumo', 500, 'custo'],
-      ['Ajuste do item', -200, 'venda'],
+      ['Ajuste do item', -200, 'estrutural'],
     ])
   })
 

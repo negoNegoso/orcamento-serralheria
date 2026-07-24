@@ -38,8 +38,12 @@
 Em `src/lib/work-order/types.ts`, adicionar após `CostSource`:
 
 ```ts
-/** 'custo' = planejado veio de custo cadastrado; 'venda' = fallback pelo preço de venda. */
-export type PlannedKind = 'custo' | 'venda'
+/**
+ * 'custo' = planejado veio de custo cadastrado; 'venda' = preço sem custo
+ * cadastrado (fallback pela venda); 'estrutural' = linha sem preço cadastrável
+ * (modelo, ajuste do item, arredondamento).
+ */
+export type PlannedKind = 'custo' | 'venda' | 'estrutural'
 
 /** Um componente de custo esperado, na unidade da venda (R$ ou R$/m²). */
 export interface CostComponent {
@@ -243,7 +247,7 @@ describe('decomposeItem com custo esperado', () => {
     // venda distribuída = 1200; resíduo = 1500 − 1200 = 300 (o surcharge do modelo)
     expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
       ['Preço base — Insumo', 300, 'custo'],
-      ['Modelo Colonial', 300, 'venda'],
+      ['Modelo Colonial', 300, 'estrutural'],
     ])
   })
 
@@ -259,14 +263,14 @@ describe('decomposeItem com custo esperado', () => {
     expect(lines[lines.length - 1]).toMatchObject({ description: 'Modelo Colonial', plannedValue: 300 })
   })
 
-  it('ajuste do item continua venda e entra na soma do resíduo', () => {
+  it('ajuste do item é estrutural e entra na soma do resíduo', () => {
     const lines = decomposeItem(input({
       unitBasePrice: 1200, extraValue: -200, lineTotal: 1000,
       baseCosts: [{ priceCategoryId: 'cat-insumo', value: 500 }],
     }), 1)
     expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
       ['Preço base — Insumo', 500, 'custo'],
-      ['Ajuste do item', -200, 'venda'],
+      ['Ajuste do item', -200, 'estrutural'],
     ])
   })
 
@@ -436,7 +440,7 @@ export function decomposeItem(
   if (input.extraValue !== 0) {
     const extra = round2(input.extraValue * multiplier)
     vendaSum = round2(vendaSum + extra)
-    push('Ajuste do item', null, extra, 'venda')
+    push('Ajuste do item', null, extra, 'estrutural')
   }
 
   // resíduo: surcharge do modelo (não persistido) + sobra de arredondamento
@@ -445,7 +449,7 @@ export function decomposeItem(
   if (residual !== 0) {
     push(
       input.modelName ? `Modelo ${input.modelName}` : 'Ajuste de arredondamento',
-      null, residual, 'venda',
+      null, residual, 'estrutural',
     )
   }
 
@@ -542,6 +546,16 @@ describe('previewMargin', () => {
   it('lista vazia devolve zeros', () => {
     expect(previewMargin([], 0, 1)).toEqual({ predictedMargin: 0, plannedTotal: 0, uncostedCount: 0 })
   })
+
+  it('linha estrutural (modelo/ajuste) nunca conta como sem custo', () => {
+    const r = previewMargin([item({
+      lineTotal: 900, modelName: 'Colonial', extraValue: 100,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 180 }],
+    })], 900, 1)
+    // base tem custo; ajuste (100) e resíduo do modelo (200) são estruturais
+    expect(r.uncostedCount).toBe(0)
+    expect(r.plannedTotal).toBe(480)
+  })
 })
 ```
 
@@ -584,11 +598,9 @@ export function previewMargin(
   for (const item of items) {
     for (const line of decomposeItem(item, multiplier)) {
       plannedTotal = round2(plannedTotal + line.plannedValue)
-      // resíduo e ajuste não são preços cadastráveis: não contam como pendência
-      if (line.plannedKind === 'venda'
-        && line.description !== 'Ajuste do item'
-        && !line.description.startsWith('Modelo ')
-        && line.description !== 'Ajuste de arredondamento') {
+      // linha estrutural (modelo, ajuste do item, arredondamento) não tem preço
+      // cadastrável: não conta como pendência
+      if (line.plannedKind === 'venda') {
         uncostedCount++
       }
     }
@@ -601,7 +613,7 @@ export function previewMargin(
 - [ ] **Step 4: Rodar e confirmar que passa**
 
 Run: `npm test -- src/lib/work-order/preview-margin.test.ts`
-Expected: PASS — 5 testes
+Expected: PASS — 6 testes
 
 - [ ] **Step 5: Commit**
 
@@ -659,11 +671,12 @@ create policy pcost_all on price_costs for all to authenticated
   using (company_id = current_company_id() and is_company_admin())
   with check (company_id = current_company_id() and is_company_admin());
 
--- 'custo' = planejado veio de custo cadastrado; 'venda' = fallback pelo preço
--- de venda (sem cadastro, ou linha estrutural: modelo, ajuste, arredondamento).
+-- 'custo' = planejado veio de custo cadastrado; 'venda' = preço sem custo
+-- cadastrado (fallback pela venda); 'estrutural' = linha sem preço cadastrável
+-- (modelo, ajuste do item, arredondamento) — nunca conta como pendência.
 -- Default 'venda' deixa as linhas já existentes semanticamente corretas.
 alter table work_order_costs add column planned_kind text not null default 'venda'
-  check (planned_kind in ('custo','venda'));
+  check (planned_kind in ('custo','venda','estrutural'));
 
 -- planned_kind entra no congelamento: é parte da foto da aprovação.
 create or replace function public.woc_frozen_guard() returns trigger
@@ -729,7 +742,9 @@ Esta função espelha `decomposeItem` da Task 2. Mesma ordem de linhas, mesmas d
 ```sql
 -- Clone da OS com custo esperado. Espelha decomposeItem() em TS:
 -- preço com custo cadastrado vira uma linha por componente (planned_kind='custo');
--- sem cadastro, cai no comportamento antigo (planned_kind='venda').
+-- sem cadastro, cai no comportamento antigo (planned_kind='venda'); linha
+-- estrutural (ajuste do item, modelo/resíduo) usa planned_kind='estrutural' —
+-- não há preço cadastrável nela, então nunca conta como pendência.
 -- O resíduo do modelo é medido contra a soma da VENDA (v_sum_venda), acumulada
 -- em separado — linhas de custo não carregam venda, e a venda de um preço conta
 -- uma vez só mesmo gerando vários componentes.
@@ -878,7 +893,7 @@ begin
         item_label, quote_item_id, price_category_id, qty, unit_value, planned_value,
         planned_kind, sort_order)
       values (p_work_order_id, v_company, 'orcamento', 'Ajuste do item',
-        v_label, it.id, null, 1, v_venda, v_venda, 'venda', v_sort);
+        v_label, it.id, null, 1, v_venda, v_venda, 'estrutural', v_sort);
       v_sort := v_sort + 1;
     end if;
 
@@ -892,7 +907,7 @@ begin
       values (p_work_order_id, v_company, 'orcamento',
         case when nullif(it.model_name, '') is not null then 'Modelo ' || it.model_name
              else 'Ajuste de arredondamento' end,
-        v_label, it.id, null, 1, v_res, v_res, 'venda', v_sort);
+        v_label, it.id, null, 1, v_res, v_res, 'estrutural', v_sort);
       v_sort := v_sort + 1;
     end if;
   end loop;
@@ -1260,7 +1275,7 @@ e trocar o rótulo de "Planejado" para "Custo esperado", que é o que ele passa 
 Em `src/components/work-order/cost-table.tsx`, na célula de descrição, trocar a condição do badge atual (`c.planned_value === 0`) por duas marcas distintas:
 
 ```tsx
-                      {c.planned_kind === 'venda' && c.planned_value !== 0 && (
+                      {c.planned_kind === 'venda' && (
                         <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                           sem custo cadastrado
                         </span>

@@ -3,8 +3,12 @@ import type { Stage } from '@/lib/production/stages'
 export type WorkOrderStatus = 'planejada' | 'em_andamento' | 'concluida' | 'cancelada'
 export type CostSource = 'orcamento' | 'manual' | 'terceiro'
 
-/** 'custo' = planejado veio de custo cadastrado; 'venda' = fallback pelo preço de venda. */
-export type PlannedKind = 'custo' | 'venda'
+/**
+ * 'custo' = planejado veio de custo cadastrado; 'venda' = preço sem custo
+ * cadastrado (fallback pela venda); 'estrutural' = linha sem preço cadastrável
+ * (modelo, ajuste do item, arredondamento).
+ */
+export type PlannedKind = 'custo' | 'venda' | 'estrutural'
 
 /** Um componente de custo esperado, na unidade da venda (R$ ou R$/m²). */
 export interface CostComponent {
