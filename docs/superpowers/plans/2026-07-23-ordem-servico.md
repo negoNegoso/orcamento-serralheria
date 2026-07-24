@@ -2025,6 +2025,16 @@ export async function deleteCost(fd: FormData): Promise<void> {
   const supabase = await adminClient()
   const id = String(fd.get('id') ?? '')
   const quoteId = String(fd.get('quote_id') ?? '')
+  if (!id || !quoteId) throw new Error('Lançamento inválido')
+
+  // Linha de orçamento é a base de comparação congelada: nunca pode ser
+  // excluída, só ter o valor real editado. A UI já esconde o botão, mas o
+  // guard precisa estar aqui — a RLS não distingue source.
+  const { data: row } = await supabase
+    .from('work_order_costs').select('source').eq('id', id).single()
+  if (!row) throw new Error('Lançamento não encontrado')
+  if (row.source === 'orcamento') throw new Error('Linha do orçamento não pode ser excluída')
+
   const { error } = await supabase.from('work_order_costs').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
@@ -2058,7 +2068,7 @@ export function CostTable({ costs, editable, quoteId }: {
 })
 ```
 
-O `<thead>` ganha as colunas `Qtd`, `Valor un.` e uma coluna vazia quando `editable`, e cada `<tr>` passa a renderizar:
+O `<thead>` ganha a coluna `Qtd × Valor un.` e uma coluna vazia quando `editable`, e cada `<tr>` passa a renderizar:
 
 ```tsx
 {editable ? (

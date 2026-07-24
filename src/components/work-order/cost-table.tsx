@@ -31,8 +31,7 @@ export function CostTable({ costs, editable, quoteId }: {
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="py-1 font-medium">Descrição</th>
                   <th className="py-1 text-right font-medium">Planejado</th>
-                  {editable && <th className="py-1 text-right font-medium">Qtd</th>}
-                  {editable && <th className="py-1 text-right font-medium">Valor un.</th>}
+                  {editable && <th className="py-1 text-right font-medium">Qtd × Valor un.</th>}
                   <th className="py-1 text-right font-medium">Real</th>
                   {editable && <th className="py-1 font-medium"></th>}
                 </tr>
