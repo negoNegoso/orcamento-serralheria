@@ -89,14 +89,33 @@ export async function saveQuote(input: SaveQuoteInput): Promise<{ id: string } |
 
 export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'aprovado' | 'recusado') {
   const { supabase } = await getProfile()
+
+  // Estado anterior guardado para desfazer se a RPC da OS falhar: as duas
+  // escritas não estão numa transação, e um orçamento aprovado sem OS sumiria
+  // do quadro de produção, que lê work_orders.
+  const { data: before, error: readError } = await supabase
+    .from('quotes').select('status, updated_at').eq('id', id).single()
+  if (readError) throw new Error(readError.message)
+
   const { error } = await supabase.from('quotes')
     .update({ status, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw new Error(error.message)
-  // ao aprovar, entra no quadro de produção na etapa inicial (só se ainda não tem etapa)
-  if (status === 'aprovado') {
-    await supabase.from('quotes')
-      .update({ production_stage: 'pendente' }).eq('id', id).is('production_stage', null)
+
+  // aprovar gera (ou revive) a OS; sair de aprovado cancela, preservando os
+  // custos já lançados. A RPC é idempotente: reaprovar devolve a mesma OS.
+  const rpc = status === 'aprovado' ? 'create_work_order' : 'cancel_work_order'
+  const { error: woError } = await supabase.rpc(rpc, { p_quote_id: id })
+  if (woError) {
+    const { error: undoError } = await supabase.from('quotes')
+      .update({ status: before.status, updated_at: before.updated_at }).eq('id', id)
+    // desfazimento falhou: o orçamento ficou com o status novo e sem OS, e isso
+    // precisa aparecer no erro — senão a inconsistência fica indiagnosticável.
+    if (undoError) {
+      throw new Error(`${woError.message} — status do orçamento não pôde ser desfeito: ${undoError.message}`)
+    }
+    throw new Error(woError.message)
   }
+
   revalidatePath('/')
   revalidatePath(`/orcamentos/${id}`)
   revalidatePath('/producao')

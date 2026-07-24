@@ -18,8 +18,10 @@ const URGENCY_CLASS: Record<Urgency, string> = {
   'sem-data': 'text-muted-foreground italic',
 }
 
-export function Board({ quotes, todayISO, pendenciesByQuote }: {
-  quotes: BoardQuote[]; todayISO: string; pendenciesByQuote: Record<string, Pendency[]>
+export function Board({ quotes, todayISO, pendenciesByQuote, variances = {} }: {
+  quotes: BoardQuote[]; todayISO: string
+  pendenciesByQuote: Record<string, Pendency[]>
+  variances?: Record<string, number>
 }) {
   const router = useRouter()
   const [dragId, setDragId] = useState<string | null>(null)
@@ -70,6 +72,11 @@ export function Board({ quotes, todayISO, pendenciesByQuote }: {
                         : 'sem data'}
                     </p>
                     <p className="text-muted-foreground">{formatBRL(q.total)}</p>
+                    {variances[q.work_order_id] != null && variances[q.work_order_id] !== 0 && (
+                      <span className={variances[q.work_order_id] > 0 ? 'text-xs font-semibold text-red-600' : 'text-xs font-semibold text-green-700'}>
+                        {variances[q.work_order_id] > 0 ? '▲' : '▼'} {formatBRL(Math.abs(variances[q.work_order_id]))}
+                      </span>
+                    )}
                     {q.open_pendencies > 0 && (
                       <p className="text-xs text-amber-700">{q.open_pendencies} pendência(s)</p>
                     )}
