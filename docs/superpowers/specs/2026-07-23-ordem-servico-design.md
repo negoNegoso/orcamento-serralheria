@@ -67,10 +67,11 @@ create index work_orders_stage_idx on work_orders(production_stage) where archiv
 `quote_total` e `quote_snapshot_at` (cópia de `quotes.updated_at` na criação) são congelados.
 Se `quotes.updated_at > quote_snapshot_at`, a tela avisa que o planejado está defasado.
 
-**Migração do estado atual:** `production_stage` e `archived_at` saem de `quotes`. A migration
-cria uma OS para cada quote com `status = 'aprovado'`, copiando as duas colunas, e só então
-executa `alter table quotes drop column production_stage, drop column archived_at`. As OS
-retroativas nascem com as linhas de custo clonadas pela mesma decomposição da criação normal.
+**Migração do estado atual**, em quatro migrations para o sistema nunca ficar quebrado entre
+elas: `0031` cria as tabelas e views; `0032` cria as funções; `0033` cria uma OS para cada quote
+`aprovado`, copiando `production_stage`/`archived_at` e clonando as linhas de custo pela mesma
+decomposição da criação normal; `0034` executa `alter table quotes drop column production_stage,
+drop column archived_at` — só depois que o app já lê `work_orders`.
 
 ### `work_order_costs`
 
@@ -163,12 +164,17 @@ Para cada `quote_item`, com `m = quotes.multiplier`:
 |---|---|---|
 | base | `unit_base_price × qty × m` | `product_types.price_category_id` |
 | cada entrada de `selected_options` | `(surchargeType = 'por_m2' ? surchargeValue × area_m2 : surchargeValue) × qty × m` | `coalesce(options.price_category_id, option_groups.price_category_id)`, via `optionId` |
-| ajuste do modelo, só se ≠ 0 | `(unit_total − unit_base_price − Σ opções) × qty × m` | nula |
 | `extra_value`, só se ≠ 0 | `extra_value × m` | nula |
+| ajuste do modelo, só se ≠ 0 | `line_total × m − (base + Σ opções + extra)` | nula |
 
 O ajuste do modelo entra como **resíduo** porque `quote_items` guarda `model_id`, `model_name` e
-`model_photo_url`, mas não o valor do surcharge aplicado. O resíduo é exato e não depende de join
-em catálogo mutável. Invariante: `Σ linhas do item = line_total × m`.
+`model_photo_url`, mas não o valor do surcharge aplicado. Calculado como diferença contra
+`line_total` (já persistido na linha), e não recomputando o surcharge, o resíduo absorve também
+qualquer sobra de arredondamento — a invariante `Σ linhas do item = line_total × m` vale por
+construção, sem depender de join em catálogo mutável.
+
+Linha de opção com valor zero é gravada mesmo assim: ela carrega a natureza do escopo vendido, e
+o usuário pode lançar custo real nela.
 
 Os joins em `options`, `option_groups` e `product_types` são `left join` — catálogo deletado
 depois da venda não pode impedir a criação da OS; a linha só fica sem categoria.
@@ -183,6 +189,10 @@ fecham entre si.
 ## RPCs
 
 Migration `supabase/migrations/0032_work_order_rpcs.sql`.
+
+A decomposição em SQL vive numa função interna `work_order_clone_costs(p_work_order_id,
+p_quote_id)`, `security definer`, sem checagem de empresa — quem chama já validou. Existe para
+`create_work_order` e o backfill de `0033` compartilharem exatamente o mesmo código.
 
 `close_work_order` e `reopen_work_order` são `security invoker` (só admin as chama, e admin já tem
 `update` pela policy). As três alcançáveis por vendedor — `create_work_order`, `cancel_work_order`
@@ -359,8 +369,10 @@ deste modelo muda.
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/migrations/0031_work_orders.sql` | tabelas, views, RLS, triggers, migração de `production_stage`/`archived_at`, backfill das OS de quotes aprovados |
-| `supabase/migrations/0032_work_order_rpcs.sql` | `create_work_order`, `cancel_work_order`, `set_production_stage`, `close_work_order`, `reopen_work_order` |
+| `supabase/migrations/0031_work_orders.sql` | tabelas, views, RLS, trigger |
+| `supabase/migrations/0032_work_order_rpcs.sql` | `work_order_clone_costs`, `create_work_order`, `cancel_work_order`, `set_production_stage`, `close_work_order`, `reopen_work_order` |
+| `supabase/migrations/0033_work_orders_backfill.sql` | uma OS por quote aprovado, com stage, arquivamento e linhas de custo |
+| `supabase/migrations/0034_drop_quote_production_columns.sql` | remove `production_stage` e `archived_at` de `quotes` |
 | `src/lib/work-order/types.ts` | types da OS e das linhas |
 | `src/lib/work-order/decompose.ts` + teste | decomposição do orçamento em linhas planejadas |
 | `src/lib/work-order/status.ts` + teste | máquina de estados |
