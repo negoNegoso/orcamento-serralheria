@@ -43,6 +43,7 @@ export default async function ProdutoDetalhe({ params }: { params: Promise<{ id:
         groups={product.option_groups}
         templates={templates}
         categories={categories}
+        priceCosts={priceCosts}
       />
       <ModelEditor productId={product.id} models={product.models} companyId={company!.id} />
     </div>

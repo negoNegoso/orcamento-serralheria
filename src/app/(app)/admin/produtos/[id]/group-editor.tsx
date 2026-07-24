@@ -15,6 +15,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import type { GroupTemplateRow, OptionGroupRow, PriceCategory } from '@/lib/config-types'
+import type { PriceCost } from '@/lib/work-order/types'
 import { reorderGroups } from './actions'
 import { GroupCard } from './group-card'
 import { ApplyTemplateModal, ConfirmDeleteGroupModal, GroupFormModal } from './group-modals'
@@ -23,12 +24,14 @@ function SortableGroupCard({
   productId,
   group,
   categories,
+  priceCosts,
   onEdit,
   onDelete,
 }: {
   productId: string
   group: OptionGroupRow
   categories: PriceCategory[]
+  priceCosts: PriceCost[]
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -43,6 +46,7 @@ function SortableGroupCard({
         productId={productId}
         group={group}
         categories={categories}
+        priceCosts={priceCosts}
         onEdit={onEdit}
         onDelete={onDelete}
         dragHandle={
@@ -66,11 +70,13 @@ export function GroupEditor({
   groups,
   templates,
   categories,
+  priceCosts,
 }: {
   productId: string
   groups: OptionGroupRow[]
   templates: GroupTemplateRow[]
   categories: PriceCategory[]
+  priceCosts: PriceCost[]
 }) {
   const [groupIds, setGroupIds] = useState(groups.map(g => g.id))
   const [reorderError, setReorderError] = useState('')
@@ -151,6 +157,7 @@ export function GroupEditor({
                   productId={productId}
                   group={group}
                   categories={categories}
+                  priceCosts={priceCosts}
                   onEdit={() => {
                     setFormGroup(group)
                     setFormOpen(true)
