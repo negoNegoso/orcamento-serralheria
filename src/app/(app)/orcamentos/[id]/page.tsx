@@ -11,25 +11,40 @@ import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { ReceiptsSection } from '@/components/receipt/receipts-section'
 import { OrderSummary } from '@/components/work-order/order-summary'
-import { fetchWorkOrder, fetchWorkOrderTotals } from '@/lib/work-order/queries'
+import { fetchWorkOrder, fetchWorkOrderTotals, fetchPriceCosts } from '@/lib/work-order/queries'
+import { buildPreviewInputs } from '@/lib/work-order/quote-preview'
+import { previewMargin } from '@/lib/work-order/preview-margin'
+import { MarginPreview } from '@/components/work-order/margin-preview'
 import { setStatus, cloneQuote } from '../actions'
 import type { ItemSelection } from '@/lib/pricing/snapshot'
 
 export default async function OrcamentoDetalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { supabase, user, profile } = await getProfile()
-  const [{ data: quote }, products, { data: activeUsers }, { data: receipts }, { data: fin }] = await Promise.all([
+  const [{ data: quote }, products, { data: activeUsers }, { data: receipts }, { data: fin }, { data: categories }] = await Promise.all([
     supabase.from('quotes').select('*, quote_items(*), creator:created_by(name)').eq('id', id).single(),
     fetchProductConfigs(supabase),
     supabase.from('profiles').select('id, name').eq('active', true).order('name'),
     supabase.from('receipts').select('*').eq('quote_id', id).order('receipt_date', { ascending: false }).order('created_at', { ascending: false }),
     supabase.from('quote_financials').select('received').eq('quote_id', id).single(),
+    supabase.from('price_categories').select('id, slug, name, sort_order').order('sort_order'),
   ])
   if (!quote) notFound()
 
   const isAdmin = profile.role !== 'vendedor'
   const workOrder = isAdmin ? await fetchWorkOrder(supabase, id) : null
   const woTotals = workOrder ? await fetchWorkOrderTotals(supabase, workOrder.id) : null
+
+  // Prévia só faz sentido antes de aprovar: depois, o número real é o da OS.
+  const showPreview = isAdmin && quote.status !== 'aprovado'
+  const priceCosts = showPreview ? await fetchPriceCosts(supabase) : []
+  const preview = showPreview
+    ? previewMargin(
+        buildPreviewInputs(quote.quote_items, products, priceCosts, categories ?? []),
+        Number(quote.total),
+        quote.multiplier ?? 1,
+      )
+    : null
 
   const canReassign = canReassignOwner({
     role: profile.role,
@@ -116,6 +131,7 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
           receipts={(receipts ?? []) as any}
         />
       )}
+      {preview && <MarginPreview preview={preview} quoteTotal={Number(quote.total)} />}
       {workOrder && woTotals && (
         <OrderSummary
           quoteId={id}
