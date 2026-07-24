@@ -92,11 +92,13 @@ export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'ap
   const { error } = await supabase.from('quotes')
     .update({ status, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw new Error(error.message)
-  // ao aprovar, entra no quadro de produção na etapa inicial (só se ainda não tem etapa)
-  if (status === 'aprovado') {
-    await supabase.from('quotes')
-      .update({ production_stage: 'pendente' }).eq('id', id).is('production_stage', null)
-  }
+
+  // aprovar gera (ou revive) a OS; sair de aprovado cancela, preservando os
+  // custos já lançados. A RPC é idempotente: reaprovar devolve a mesma OS.
+  const rpc = status === 'aprovado' ? 'create_work_order' : 'cancel_work_order'
+  const { error: woError } = await supabase.rpc(rpc, { p_quote_id: id })
+  if (woError) throw new Error(woError.message)
+
   revalidatePath('/')
   revalidatePath(`/orcamentos/${id}`)
   revalidatePath('/producao')
