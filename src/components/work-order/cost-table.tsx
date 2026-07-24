@@ -1,4 +1,6 @@
 import { formatBRL } from '@/lib/format'
+import { SubmitButton } from '@/components/ui/submit-button'
+import { deleteCost, updateCost } from '@/app/(app)/orcamentos/[id]/ordem/actions'
 import type { WorkOrderCost } from '@/lib/work-order/types'
 
 function groupByItem(costs: WorkOrderCost[]): [string, WorkOrderCost[]][] {
@@ -12,7 +14,9 @@ function groupByItem(costs: WorkOrderCost[]): [string, WorkOrderCost[]][] {
   return [...groups.entries()]
 }
 
-export function CostTable({ costs }: { costs: WorkOrderCost[] }) {
+export function CostTable({ costs, editable, quoteId }: {
+  costs: WorkOrderCost[]; editable: boolean; quoteId: string
+}) {
   if (costs.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhum lançamento.</p>
   }
@@ -27,7 +31,10 @@ export function CostTable({ costs }: { costs: WorkOrderCost[] }) {
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="py-1 font-medium">Descrição</th>
                   <th className="py-1 text-right font-medium">Planejado</th>
+                  {editable && <th className="py-1 text-right font-medium">Qtd</th>}
+                  {editable && <th className="py-1 text-right font-medium">Valor un.</th>}
                   <th className="py-1 text-right font-medium">Real</th>
+                  {editable && <th className="py-1 font-medium"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -43,7 +50,33 @@ export function CostTable({ costs }: { costs: WorkOrderCost[] }) {
                       )}
                     </td>
                     <td className="py-1 text-right text-muted-foreground">{formatBRL(c.planned_value)}</td>
-                    <td className="py-1 text-right font-semibold">{formatBRL(c.actual_value)}</td>
+                    {editable ? (
+                      <>
+                        <td className="py-1 text-right">
+                          <form action={updateCost} className="flex items-center justify-end gap-1">
+                            <input type="hidden" name="id" value={c.id} />
+                            <input type="hidden" name="quote_id" value={quoteId} />
+                            <input name="qty" defaultValue={String(c.qty)} inputMode="decimal"
+                              className="w-16 rounded-md border px-2 py-1 text-right" aria-label="Quantidade" />
+                            <input name="unit_value" defaultValue={String(c.unit_value)} inputMode="decimal"
+                              className="w-28 rounded-md border px-2 py-1 text-right" aria-label="Valor unitário" />
+                            <SubmitButton size="sm" variant="outline">ok</SubmitButton>
+                          </form>
+                        </td>
+                        <td className="py-1 text-right font-semibold">{formatBRL(c.actual_value)}</td>
+                        <td className="py-1 text-right">
+                          {c.source !== 'orcamento' && (
+                            <form action={deleteCost}>
+                              <input type="hidden" name="id" value={c.id} />
+                              <input type="hidden" name="quote_id" value={quoteId} />
+                              <SubmitButton variant="link" className="h-auto px-0 text-red-600 underline">excluir</SubmitButton>
+                            </form>
+                          )}
+                        </td>
+                      </>
+                    ) : (
+                      <td className="py-1 text-right font-semibold">{formatBRL(c.actual_value)}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>

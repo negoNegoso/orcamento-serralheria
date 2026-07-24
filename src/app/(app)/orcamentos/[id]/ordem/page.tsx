@@ -3,11 +3,13 @@ import { notFound, redirect } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 import { formatBRL } from '@/lib/format'
 import { STAGE_LABELS } from '@/lib/production/stages'
-import { WO_STATUS_LABELS } from '@/lib/work-order/status'
+import { canEditCosts, WO_STATUS_LABELS } from '@/lib/work-order/status'
 import { rollupByCategory } from '@/lib/work-order/variance'
 import { fetchWorkOrder, fetchWorkOrderCosts, fetchWorkOrderTotals } from '@/lib/work-order/queries'
+import { AddCostModal } from '@/components/work-order/add-cost-modal'
 import { CategorySummary } from '@/components/work-order/category-summary'
 import { CostTable } from '@/components/work-order/cost-table'
+import { OrderActions } from '@/components/work-order/order-actions'
 import type { PriceCategory } from '@/lib/config-types'
 
 export default async function OrdemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -27,6 +29,7 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
   if (!totals) notFound()
 
   const rows = rollupByCategory(costs, (categories ?? []) as PriceCategory[])
+  const editable = canEditCosts(workOrder.status)
 
   return (
     <div className="space-y-4">
@@ -40,6 +43,7 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
             {STAGE_LABELS[workOrder.production_stage]}
           </span>
         )}
+        <OrderActions quoteId={id} workOrder={workOrder} />
         <Link href={`/orcamentos/${id}`} className="ml-auto underline">
           ← {quote?.customer_name ?? 'Orçamento'}
         </Link>
@@ -67,7 +71,17 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
       </section>
 
       <CategorySummary rows={rows} />
-      <CostTable costs={costs} />
+      <div className="flex items-center gap-3">
+        <h2 className="text-lg font-bold">Lançamentos</h2>
+        {editable && (
+          <AddCostModal
+            quoteId={id}
+            workOrderId={workOrder.id}
+            categories={(categories ?? []) as PriceCategory[]}
+          />
+        )}
+      </div>
+      <CostTable costs={costs} editable={editable} quoteId={id} />
     </div>
   )
 }
