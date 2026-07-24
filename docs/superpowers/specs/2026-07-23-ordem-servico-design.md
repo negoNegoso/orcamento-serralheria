@@ -212,7 +212,9 @@ Todas com `set search_path = public`.
    `company_id <> current_company_id()` → exceção.
 2. `status <> 'aprovado'` → exceção.
 3. OS já existe para o quote: se `status = 'cancelada'`, volta para `planejada`; retorna o id
-   existente sem tocar nas linhas. Idempotente.
+   existente sem tocar nas linhas. Idempotente. OS `concluida` não é revivida — o fechamento
+   financeiro só se desfaz por `reopen_work_order`, ato explícito de admin —, então a função
+   devolve o id e não muda nada.
 4. `number := coalesce(max(number), 0) + 1` entre as OS da empresa, dentro da transação.
 5. Insere a OS com `production_stage = 'pendente'`, `quote_total = quotes.total`,
    `quote_snapshot_at = quotes.updated_at`, `created_by = auth.uid()`.
@@ -260,7 +262,7 @@ Todas com `revoke execute ... from public, anon` e `grant execute ... to authent
 
 | evento | efeito |
 |---|---|
-| quote → `aprovado` | `create_work_order` (cria, ou revive uma cancelada) |
+| quote → `aprovado` | `create_work_order` (cria, ou revive uma cancelada; uma `concluida` fica como está) |
 | quote sai de `aprovado` | `cancel_work_order`: OS → `cancelada`. Linhas de custo preservadas. Nunca apaga. Não afeta uma OS `concluida` — fechamento financeiro já congelou o custo real. |
 | `production_stage` sai de `pendente`/`a_produzir` | se `status = 'planejada'` → `em_andamento`, dentro de `set_production_stage`. Recusado se a OS estiver `concluida` (ou `cancelada`): concluída, o card não se move mais. |
 | `production_stage` = `instalado`, ou arquivamento | a tela **propõe** concluir; não conclui sozinha |
