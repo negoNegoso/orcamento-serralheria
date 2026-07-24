@@ -24,7 +24,7 @@ export async function fetchBoardQuotes(supabase: SupabaseClient): Promise<BoardQ
     .from('quotes')
     .select('id, customer_name, delivery_date, total, quote_pendencies(done), work_orders!inner(id, production_stage, status, archived_at)')
     .eq('status', 'aprovado')
-    .neq('work_orders.status', 'cancelada')
+    .not('work_orders.status', 'in', '("cancelada","concluida")')
     .is('work_orders.archived_at', null)
     .order('delivery_date', { ascending: true, nullsFirst: false })
   if (error) throw new Error(error.message)

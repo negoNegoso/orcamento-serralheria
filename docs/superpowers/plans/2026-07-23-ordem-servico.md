@@ -1433,7 +1433,7 @@ export async function fetchBoardQuotes(supabase: SupabaseClient): Promise<BoardQ
     .from('quotes')
     .select('id, customer_name, delivery_date, total, quote_pendencies(done), work_orders!inner(id, production_stage, status, archived_at)')
     .eq('status', 'aprovado')
-    .neq('work_orders.status', 'cancelada')
+    .not('work_orders.status', 'in', '("cancelada","concluida")')
     .is('work_orders.archived_at', null)
     .order('delivery_date', { ascending: true, nullsFirst: false })
   if (error) throw new Error(error.message)
@@ -2003,6 +2003,7 @@ export async function addCost(quoteId: string, fd: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
   revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/producao')
 }
 
 /** Só qty e unit_value: actual_value é coluna gerada, planned_value é congelado. */
@@ -2019,6 +2020,7 @@ export async function updateCost(fd: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
   revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/producao')
 }
 
 export async function deleteCost(fd: FormData): Promise<void> {
@@ -2039,6 +2041,7 @@ export async function deleteCost(fd: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
   revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/producao')
 }
 
 export async function closeOrder(quoteId: string, workOrderId: string): Promise<void> {

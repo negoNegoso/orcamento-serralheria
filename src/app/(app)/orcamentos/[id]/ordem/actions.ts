@@ -38,6 +38,7 @@ export async function addCost(quoteId: string, fd: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
   revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/producao')
 }
 
 /** Só qty e unit_value: actual_value é coluna gerada, planned_value é congelado. */
@@ -54,6 +55,7 @@ export async function updateCost(fd: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
   revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/producao')
 }
 
 export async function deleteCost(fd: FormData): Promise<void> {
@@ -74,6 +76,7 @@ export async function deleteCost(fd: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/orcamentos/${quoteId}/ordem`)
   revalidatePath(`/orcamentos/${quoteId}`)
+  revalidatePath('/producao')
 }
 
 export async function closeOrder(quoteId: string, workOrderId: string): Promise<void> {

@@ -161,6 +161,12 @@ Três triggers, para regras que nenhuma policy expressa:
 - `wo_frozen_guard` (before update em `work_orders`): congela a foto da aprovação — `quote_id`,
   `number`, `quote_total` e `quote_snapshot_at` não mudam depois que a OS nasce.
 
+Os três triggers acima cobrem UPDATE (e o primeiro, INSERT/DELETE por status). A impossibilidade de
+excluir uma linha `source='orcamento'` é diferente: não existe trigger de `before delete` para isso — quem
+bloqueia é a server action `deleteCost`. Um `before delete` na tabela entraria em conflito com o `on delete
+cascade` de `quotes` → `work_orders` → `work_order_costs`, o que tornaria impossível excluir um orçamento
+(a exclusão do orçamento precisa arrastar a OS e seu ledger de custos junto).
+
 ## Decomposição do clone
 
 Para cada `quote_item`, com `m = quotes.multiplier`:
