@@ -92,6 +92,20 @@ describe('decomposeItem', () => {
     expect(lines[0].plannedValue).toBe(3600)
   })
 
+  it('opção por_m2 escala por área, qty e multiplier ao mesmo tempo', () => {
+    // área 6 × R$ 40 = 240 por unidade; × qty 3 = 720; × multiplier 2 = 1440
+    const lines = decomposeItem(input({
+      qty: 3,
+      areaM2: 6,
+      lineTotal: (1200 + 40 * 6) * 3,
+      selectedOptions: [
+        { optionId: 'o1', group: 'Acabamento', label: 'Pintura', surchargeType: 'por_m2', surchargeValue: 40 },
+      ],
+      optionCategoryIds: { o1: 'cat-repasse' },
+    }), 2)
+    expect(lines.map(l => l.plannedValue)).toEqual([7200, 1440])
+  })
+
   it('extra_value vira linha própria sem categoria; zero não gera linha', () => {
     const comExtra = decomposeItem(input({ extraValue: -80, lineTotal: 1120 }), 1)
     expect(comExtra[1]).toMatchObject({ description: 'Ajuste do item', priceCategoryId: null, plannedValue: -80 })
