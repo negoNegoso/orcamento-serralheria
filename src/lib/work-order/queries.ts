@@ -50,6 +50,7 @@ export async function fetchWorkOrderTotals(
     actual_total: Number(data.actual_total),
     variance: Number(data.variance),
     margin: Number(data.margin),
+    predicted_margin: 0, // coluna entra na view na migration 0035; valor real chega na task de queries
   }
 }
 

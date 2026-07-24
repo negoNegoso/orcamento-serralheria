@@ -17,6 +17,15 @@ export function margin(quoteTotal: number, actualTotal: number): number {
   return round2(quoteTotal - actualTotal)
 }
 
+/**
+ * Margem prevista: o que sobra se o custo real fechar no custo esperado.
+ * Linha sem custo cadastrado entra no planejado pelo preço de venda e por isso
+ * não contribui margem — o número é conservador de propósito.
+ */
+export function predictedMargin(quoteTotal: number, plannedTotal: number): number {
+  return round2(quoteTotal - plannedTotal)
+}
+
 type CostSlice = { price_category_id: string | null; planned_value: number; actual_value: number }
 
 function emptyRow(id: string | null, name: string): CategoryTotals {

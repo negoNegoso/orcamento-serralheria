@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { margin, rollupByCategory, variance, variancePercent } from './variance'
+import { margin, predictedMargin, rollupByCategory, variance, variancePercent } from './variance'
 import type { PriceCategory } from '@/lib/config-types'
 
 const CATS: PriceCategory[] = [
@@ -59,5 +59,17 @@ describe('rollupByCategory', () => {
   it('categoria que sumiu do catálogo cai em "Sem categoria"', () => {
     const rows = rollupByCategory([cost('apagada', 7, 7)], CATS)
     expect(rows[rows.length - 1]).toMatchObject({ price_category_id: null, actual_total: 7 })
+  })
+})
+
+describe('predictedMargin', () => {
+  it('total do orçamento menos o custo esperado', () => {
+    expect(predictedMargin(2934.90, 1190)).toBe(1744.90)
+  })
+  it('custo esperado acima do total dá margem prevista negativa', () => {
+    expect(predictedMargin(1000, 1200)).toBe(-200)
+  })
+  it('sem custo cadastrado (planejado = venda) a margem prevista é zero', () => {
+    expect(predictedMargin(2934.90, 2934.90)).toBe(0)
   })
 })
