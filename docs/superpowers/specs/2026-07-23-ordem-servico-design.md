@@ -151,10 +151,15 @@ situações — aprovar um orçamento, reprovar um já aprovado e mover o card n
 passam por RPCs `security definer` que validam a empresa e tocam só as colunas permitidas (ver
 "RPCs"). Um caminho de escrita por papel, sem policy larga que precise de trigger para estreitar.
 
-Um trigger, para a regra que nenhuma policy expressa:
+Três triggers, para regras que nenhuma policy expressa:
 
 - `woc_closed_guard` (before insert/update/delete em `work_order_costs`): bloqueia se a OS estiver
   `concluida` ou `cancelada`.
+- `woc_frozen_guard` (before update em `work_order_costs`): `woc_all` é `for all` e não restringe
+  coluna, então este trigger é quem impede alterar `planned_value` depois de lançado e quem impede
+  reatribuir a linha a outra OS via `work_order_id`.
+- `wo_frozen_guard` (before update em `work_orders`): congela a foto da aprovação — `quote_id`,
+  `number`, `quote_total` e `quote_snapshot_at` não mudam depois que a OS nasce.
 
 ## Decomposição do clone
 

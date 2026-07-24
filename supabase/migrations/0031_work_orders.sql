@@ -116,3 +116,42 @@ $$;
 create trigger woc_closed_guard
   before insert or update or delete on work_order_costs
   for each row execute function public.woc_closed_guard();
+
+-- planned_value é a base de comparação da OS. A policy woc_all é `for all` e
+-- não restringe coluna, então a imutabilidade do planejado (e o vínculo da
+-- linha com a OS) é garantida aqui, não na camada de aplicação.
+create or replace function public.woc_frozen_guard() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.planned_value is distinct from old.planned_value then
+    raise exception 'planned_value é congelado e não pode ser alterado';
+  end if;
+  if new.work_order_id is distinct from old.work_order_id then
+    raise exception 'Lançamento não pode mudar de ordem de serviço';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger woc_frozen_guard
+  before update on work_order_costs
+  for each row execute function public.woc_frozen_guard();
+
+-- Foto da aprovação: total do orçamento, marca d'água do snapshot, vínculo e
+-- numeração não mudam depois que a OS nasce.
+create or replace function public.wo_frozen_guard() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.quote_id is distinct from old.quote_id
+     or new.number is distinct from old.number
+     or new.quote_total is distinct from old.quote_total
+     or new.quote_snapshot_at is distinct from old.quote_snapshot_at then
+    raise exception 'Campos congelados da ordem de serviço não podem ser alterados';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger wo_frozen_guard
+  before update on work_orders
+  for each row execute function public.wo_frozen_guard();

@@ -782,6 +782,45 @@ $$;
 create trigger woc_closed_guard
   before insert or update or delete on work_order_costs
   for each row execute function public.woc_closed_guard();
+
+-- planned_value é a base de comparação da OS. A policy woc_all é `for all` e
+-- não restringe coluna, então a imutabilidade do planejado (e o vínculo da
+-- linha com a OS) é garantida aqui, não na camada de aplicação.
+create or replace function public.woc_frozen_guard() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.planned_value is distinct from old.planned_value then
+    raise exception 'planned_value é congelado e não pode ser alterado';
+  end if;
+  if new.work_order_id is distinct from old.work_order_id then
+    raise exception 'Lançamento não pode mudar de ordem de serviço';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger woc_frozen_guard
+  before update on work_order_costs
+  for each row execute function public.woc_frozen_guard();
+
+-- Foto da aprovação: total do orçamento, marca d'água do snapshot, vínculo e
+-- numeração não mudam depois que a OS nasce.
+create or replace function public.wo_frozen_guard() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.quote_id is distinct from old.quote_id
+     or new.number is distinct from old.number
+     or new.quote_total is distinct from old.quote_total
+     or new.quote_snapshot_at is distinct from old.quote_snapshot_at then
+    raise exception 'Campos congelados da ordem de serviço não podem ser alterados';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger wo_frozen_guard
+  before update on work_orders
+  for each row execute function public.wo_frozen_guard();
 ```
 
 - [ ] **Step 2: Aplicar a migration no banco**
@@ -811,7 +850,7 @@ select column_name, is_generated, generation_expression
 select tgname from pg_trigger where tgrelid = 'work_order_costs'::regclass and not tgisinternal;
 ```
 
-Expected: `actual_value` com `is_generated = ALWAYS` e expressão `round((qty * unit_value), 2)`; trigger `woc_closed_guard` presente. O cálculo em si é exercitado com dados reais na Task 6, Step 3.
+Expected: `actual_value` com `is_generated = ALWAYS` e expressão `round((qty * unit_value), 2)`; triggers `woc_closed_guard` e `woc_frozen_guard` presentes na `work_order_costs` (a query só inspeciona essa tabela — o terceiro trigger, `wo_frozen_guard`, fica em `work_orders` e não aparece aqui). O cálculo em si é exercitado com dados reais na Task 6, Step 3.
 
 - [ ] **Step 5: Commit**
 
