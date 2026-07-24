@@ -1295,7 +1295,7 @@ e trocar o rótulo de "Planejado" para "Custo esperado", que é o que ele passa 
 Em `src/components/work-order/cost-table.tsx`, na célula de descrição, trocar a condição do badge atual (`c.planned_value === 0`) por duas marcas distintas:
 
 ```tsx
-                      {c.planned_kind === 'venda' && (
+                      {c.source === 'orcamento' && c.planned_kind === 'venda' && (
                         <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                           sem custo cadastrado
                         </span>

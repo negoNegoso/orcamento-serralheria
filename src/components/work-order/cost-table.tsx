@@ -42,7 +42,7 @@ export function CostTable({ costs, editable, quoteId }: {
                     <td className="py-1">
                       {c.description}
                       {c.supplier && <span className="ml-2 text-muted-foreground">({c.supplier})</span>}
-                      {c.planned_kind === 'venda' && (
+                      {c.source === 'orcamento' && c.planned_kind === 'venda' && (
                         <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                           sem custo cadastrado
                         </span>
