@@ -49,14 +49,20 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
         </Link>
       </div>
 
-      <section className="grid grid-cols-2 gap-2 rounded-xl border p-4 text-sm sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 rounded-xl border p-4 text-sm sm:grid-cols-5">
         <div>
           <span className="text-muted-foreground">Total do orçamento</span>
           <p className="font-bold">{formatBRL(totals.quote_total)}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Planejado</span>
+          <span className="text-muted-foreground">Custo esperado</span>
           <p className="font-bold">{formatBRL(totals.planned_total)}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Margem prevista</span>
+          <p className={`font-bold ${totals.predicted_margin < 0 ? 'text-red-600' : 'text-green-700'}`}>
+            {formatBRL(totals.predicted_margin)}
+          </p>
         </div>
         <div>
           <span className="text-muted-foreground">Custo real</span>

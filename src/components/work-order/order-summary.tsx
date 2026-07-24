@@ -38,10 +38,16 @@ export function OrderSummary({ quoteId, workOrder, totals, quoteUpdatedAt }: {
         </p>
       )}
 
-      <div className="grid grid-cols-3 gap-2 text-sm">
+      <div className="grid grid-cols-4 gap-2 text-sm">
         <div>
-          <span className="text-muted-foreground">Planejado</span>
+          <span className="text-muted-foreground">Custo esperado</span>
           <p className="font-bold">{formatBRL(totals.planned_total)}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Margem prevista</span>
+          <p className={`font-bold ${totals.predicted_margin < 0 ? 'text-red-600' : 'text-green-700'}`}>
+            {formatBRL(totals.predicted_margin)}
+          </p>
         </div>
         <div>
           <span className="text-muted-foreground">Real</span>
