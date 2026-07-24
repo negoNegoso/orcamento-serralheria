@@ -1347,8 +1347,13 @@ export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'ap
   const rpc = status === 'aprovado' ? 'create_work_order' : 'cancel_work_order'
   const { error: woError } = await supabase.rpc(rpc, { p_quote_id: id })
   if (woError) {
-    await supabase.from('quotes')
+    const { error: undoError } = await supabase.from('quotes')
       .update({ status: before.status, updated_at: before.updated_at }).eq('id', id)
+    // desfazimento falhou: o orçamento ficou com o status novo e sem OS, e isso
+    // precisa aparecer no erro — senão a inconsistência fica indiagnosticável.
+    if (undoError) {
+      throw new Error(`${woError.message} — status do orçamento não pôde ser desfeito: ${undoError.message}`)
+    }
     throw new Error(woError.message)
   }
 
