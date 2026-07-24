@@ -21,6 +21,7 @@ declare
   v_cat     uuid;
   v_opt_id  text;
   v_sort    int := 0;
+  v_raw     text;
 begin
   select company_id, coalesce(multiplier, 1) into v_company, v_mult
     from quotes where id = p_quote_id;
@@ -53,16 +54,21 @@ begin
     loop
       v_opt_id := o->>'optionId';
       v_cat := null;
-      if v_opt_id ~ '^[0-9a-fA-F-]{36}$' then
+      if v_opt_id ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' then
         select coalesce(op.price_category_id, g.price_category_id) into v_cat
           from options op
           join option_groups g on g.id = op.group_id
          where op.id = v_opt_id::uuid;
       end if;
 
+      v_raw := o->>'surchargeValue';
+      if v_raw is null or v_raw !~ '^-?[0-9]+(\.[0-9]+)?$' then
+        v_raw := '0';
+      end if;
+
       v_val := round((case when o->>'surchargeType' = 'por_m2'
-                           then (o->>'surchargeValue')::numeric * coalesce(it.area_m2, 0)
-                           else (o->>'surchargeValue')::numeric end)
+                           then v_raw::numeric * coalesce(it.area_m2, 0)
+                           else v_raw::numeric end)
                      * it.qty * v_mult, 2);
 
       insert into work_order_costs (work_order_id, company_id, source, description,
@@ -92,7 +98,7 @@ begin
       insert into work_order_costs (work_order_id, company_id, source, description,
         item_label, quote_item_id, price_category_id, qty, unit_value, planned_value, sort_order)
       values (p_work_order_id, v_company, 'orcamento',
-        case when it.model_name is not null then 'Modelo ' || it.model_name
+        case when nullif(it.model_name, '') is not null then 'Modelo ' || it.model_name
              else 'Ajuste de arredondamento' end,
         v_label, it.id, null, 1, v_val, v_val, v_sort);
       v_sort := v_sort + 1;
@@ -154,7 +160,7 @@ begin
     raise exception 'not authorized';
   end if;
   update work_orders set status = 'cancelada', updated_at = now()
-   where quote_id = p_quote_id and status <> 'cancelada';
+   where quote_id = p_quote_id and status not in ('cancelada', 'concluida');
 end;
 $$;
 
@@ -179,8 +185,8 @@ begin
   if wo.company_id is distinct from current_company_id() then
     raise exception 'not authorized';
   end if;
-  if wo.status = 'cancelada' then
-    raise exception 'Ordem de serviço cancelada';
+  if wo.status in ('cancelada', 'concluida') then
+    raise exception 'Ordem de serviço encerrada: etapa bloqueada';
   end if;
 
   update work_orders set

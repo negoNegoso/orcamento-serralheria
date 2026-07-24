@@ -225,15 +225,20 @@ Chamada em `setStatus` (`src/app/(app)/orcamentos/actions.ts:96`), substituindo 
 ### `cancel_work_order(p_quote_id uuid)` — definer
 
 Chamada por `setStatus` quando o orçamento sai de `aprovado`. Valida a empresa, grava
-`status = 'cancelada'` e não toca nas linhas de custo. Sem OS para o quote → não faz nada.
+`status = 'cancelada'` e não toca nas linhas de custo. Sem OS para o quote → não faz nada. Não
+afeta uma OS `concluida`: o fechamento financeiro já congelou o custo real, e desaprovar o
+orçamento depois não pode apagar esse fato contábil — reverter um fechamento é
+`reopen_work_order`, ação explícita de admin.
 
 ### `set_production_stage(p_quote_id uuid, p_stage text)` — definer
 
 Substitui o `update` direto que existe hoje em `src/app/(app)/producao/actions.ts`. Valida a
 empresa e o valor de `p_stage`, grava `production_stage` e aplica a promoção automática: se
 `status = 'planejada'` e o novo stage não é `pendente` nem `a_produzir`, passa para
-`em_andamento`. Recusa se a OS estiver `cancelada`. Nenhuma outra coluna é escrita — é o que
-impede o vendedor de mexer em status ou valores por chamada direta.
+`em_andamento`. Recusa se a OS estiver `cancelada` ou `concluida` — concluir congela a OS, então o
+card não se move mais no board, igual a uma cancelada; para mexer de novo, um admin reabre.
+Nenhuma outra coluna é escrita — é o que impede o vendedor de mexer em status ou valores por
+chamada direta.
 
 O arquivamento (`archived_at` + stage `instalado`) entra na mesma função, por
 `p_stage = 'instalado'` com um segundo parâmetro `p_archive boolean default false`, evitando uma
@@ -256,8 +261,8 @@ Todas com `revoke execute ... from public, anon` e `grant execute ... to authent
 | evento | efeito |
 |---|---|
 | quote → `aprovado` | `create_work_order` (cria, ou revive uma cancelada) |
-| quote sai de `aprovado` | `cancel_work_order`: OS → `cancelada`. Linhas de custo preservadas. Nunca apaga. |
-| `production_stage` sai de `pendente`/`a_produzir` | se `status = 'planejada'` → `em_andamento`, dentro de `set_production_stage` |
+| quote sai de `aprovado` | `cancel_work_order`: OS → `cancelada`. Linhas de custo preservadas. Nunca apaga. Não afeta uma OS `concluida` — fechamento financeiro já congelou o custo real. |
+| `production_stage` sai de `pendente`/`a_produzir` | se `status = 'planejada'` → `em_andamento`, dentro de `set_production_stage`. Recusado se a OS estiver `concluida` (ou `cancelada`): concluída, o card não se move mais. |
 | `production_stage` = `instalado`, ou arquivamento | a tela **propõe** concluir; não conclui sozinha |
 | concluir | `close_work_order`. Congela lançamentos. |
 | reabrir | `reopen_work_order`, só admin |
