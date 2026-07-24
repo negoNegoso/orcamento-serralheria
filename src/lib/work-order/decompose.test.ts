@@ -15,6 +15,10 @@ function input(over: Partial<DecomposeInput> = {}): DecomposeInput {
     selectedOptions: [],
     productCategoryId: 'cat-custo',
     optionCategoryIds: {},
+    pricingMode: 'fixo',
+    baseCosts: [],
+    optionCosts: {},
+    categoryNames: { 'cat-custo': 'Custo', 'cat-insumo': 'Insumo', 'cat-repasse': 'Repasse' },
     ...over,
   }
 }
@@ -146,5 +150,130 @@ describe('decomposeItem', () => {
   it('sortOrder é contínuo e respeita o startSort', () => {
     const lines = decomposeItem(input({ extraValue: 10, lineTotal: 1210 }), 1, 5)
     expect(lines.map(l => l.sortOrder)).toEqual([5, 6])
+  })
+})
+
+describe('decomposeItem com custo esperado', () => {
+  it('sem custo cadastrado mantém o comportamento antigo, marcado como venda', () => {
+    const lines = decomposeItem(input(), 1)
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toMatchObject({
+      description: 'Preço base', plannedValue: 1200, plannedKind: 'venda',
+    })
+  })
+
+  it('base com dois componentes vira duas linhas de custo, nomeadas pela natureza', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 600, lineTotal: 600,
+      baseCosts: [
+        { priceCategoryId: 'cat-insumo', value: 40 },
+        { priceCategoryId: 'cat-custo', value: 140 },
+      ],
+    }), 1)
+    expect(lines.map(l => [l.description, l.priceCategoryId, l.plannedValue, l.plannedKind])).toEqual([
+      ['Preço base — Insumo', 'cat-insumo', 40, 'custo'],
+      ['Preço base — Custo', 'cat-custo', 140, 'custo'],
+    ])
+  })
+
+  it('componente único não deixa sobra da venda na base', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 600, lineTotal: 600,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 200 }],
+    }), 1)
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toMatchObject({ plannedValue: 200, plannedKind: 'custo' })
+  })
+
+  it('produto por m² escala o custo pela área', () => {
+    const lines = decomposeItem(input({
+      pricingMode: 'm2', areaM2: 6, unitBasePrice: 1200, lineTotal: 1200,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 30 }],
+    }), 1)
+    // 30 R$/m² × 6 m² = 180
+    expect(lines[0]).toMatchObject({ plannedValue: 180, plannedKind: 'custo' })
+  })
+
+  it('custo escala por qty e multiplier junto', () => {
+    const lines = decomposeItem(input({
+      qty: 3, unitBasePrice: 600, lineTotal: 1800,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 50 }],
+    }), 2)
+    // 50 × 3 × 2 = 300
+    expect(lines[0]).toMatchObject({ plannedValue: 300 })
+  })
+
+  it('opção com custo vira linha de custo; opção sem custo cai no fallback de venda', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 600, lineTotal: 600 + 150 + 100,
+      selectedOptions: [
+        { optionId: 'o1', group: 'Ferragens', label: 'Fechadura', surchargeType: 'fixo', surchargeValue: 150 },
+        { optionId: 'o2', group: 'Extra', label: 'Solda', surchargeType: 'fixo', surchargeValue: 100 },
+      ],
+      optionCategoryIds: { o1: 'cat-insumo', o2: 'cat-repasse' },
+      optionCosts: { o1: [{ priceCategoryId: 'cat-insumo', value: 60 }] },
+    }), 1)
+    expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
+      ['Preço base', 600, 'venda'],
+      ['Ferragens — Fechadura — Insumo', 60, 'custo'],
+      ['Extra — Solda', 100, 'venda'],
+    ])
+  })
+
+  it('opção por_m2 com custo escala o custo pela área', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 600, areaM2: 6, lineTotal: 600 + 40 * 6,
+      selectedOptions: [
+        { optionId: 'o1', group: 'Acabamento', label: 'Pintura', surchargeType: 'por_m2', surchargeValue: 40 },
+      ],
+      optionCategoryIds: { o1: 'cat-repasse' },
+      optionCosts: { o1: [{ priceCategoryId: 'cat-repasse', value: 12 }] },
+    }), 1)
+    // 12 R$/m² × 6 = 72
+    expect(lines[1]).toMatchObject({ description: 'Acabamento — Pintura — Repasse', plannedValue: 72 })
+  })
+
+  it('resíduo do modelo é medido contra a VENDA, não contra as linhas de custo', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 1200, lineTotal: 1500, modelName: 'Colonial',
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 300 }],
+    }), 1)
+    // venda distribuída = 1200; resíduo = 1500 − 1200 = 300 (o surcharge do modelo)
+    expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
+      ['Preço base — Insumo', 300, 'custo'],
+      ['Modelo Colonial', 300, 'venda'],
+    ])
+  })
+
+  it('múltiplos componentes não inflam a soma de venda do resíduo', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 1200, lineTotal: 1500, modelName: 'Colonial',
+      baseCosts: [
+        { priceCategoryId: 'cat-insumo', value: 100 },
+        { priceCategoryId: 'cat-custo', value: 200 },
+      ],
+    }), 1)
+    // a venda 1200 conta UMA vez, não uma por componente → resíduo continua 300
+    expect(lines[lines.length - 1]).toMatchObject({ description: 'Modelo Colonial', plannedValue: 300 })
+  })
+
+  it('ajuste do item continua venda e entra na soma do resíduo', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 1200, extraValue: -200, lineTotal: 1000,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 500 }],
+    }), 1)
+    expect(lines.map(l => [l.description, l.plannedValue, l.plannedKind])).toEqual([
+      ['Preço base — Insumo', 500, 'custo'],
+      ['Ajuste do item', -200, 'venda'],
+    ])
+  })
+
+  it('componente de categoria desconhecida usa o id como rótulo em vez de sumir', () => {
+    const lines = decomposeItem(input({
+      unitBasePrice: 600, lineTotal: 600,
+      baseCosts: [{ priceCategoryId: 'cat-fantasma', value: 10 }],
+    }), 1)
+    expect(lines[0].description).toBe('Preço base — Sem categoria')
+    expect(lines[0].priceCategoryId).toBe('cat-fantasma')
   })
 })
