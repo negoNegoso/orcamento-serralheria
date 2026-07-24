@@ -10,6 +10,8 @@ import { DeleteQuoteButton } from '@/components/quote/delete-quote-button'
 import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { ReceiptsSection } from '@/components/receipt/receipts-section'
+import { OrderSummary } from '@/components/work-order/order-summary'
+import { fetchWorkOrder, fetchWorkOrderTotals } from '@/lib/work-order/queries'
 import { setStatus, cloneQuote } from '../actions'
 import type { ItemSelection } from '@/lib/pricing/snapshot'
 
@@ -24,6 +26,10 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
     supabase.from('quote_financials').select('received').eq('quote_id', id).single(),
   ])
   if (!quote) notFound()
+
+  const isAdmin = profile.role !== 'vendedor'
+  const workOrder = isAdmin ? await fetchWorkOrder(supabase, id) : null
+  const woTotals = workOrder ? await fetchWorkOrderTotals(supabase, workOrder.id) : null
 
   const canReassign = canReassignOwner({
     role: profile.role,
@@ -108,6 +114,14 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
           received={Number(fin?.received ?? 0)}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           receipts={(receipts ?? []) as any}
+        />
+      )}
+      {workOrder && woTotals && (
+        <OrderSummary
+          quoteId={id}
+          workOrder={workOrder}
+          totals={woTotals}
+          quoteUpdatedAt={quote.updated_at}
         />
       )}
       <QuoteEditor products={products} quote={existing} />
