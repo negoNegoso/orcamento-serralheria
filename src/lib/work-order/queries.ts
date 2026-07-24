@@ -52,3 +52,19 @@ export async function fetchWorkOrderTotals(
     margin: Number(data.margin),
   }
 }
+
+/** Variação por OS, para o badge do board. Só admin enxerga: a view herda as
+ *  policies de work_order_costs e devolve zero para vendedor. */
+export async function fetchBoardVariances(
+  supabase: SupabaseClient, workOrderIds: string[],
+): Promise<Record<string, number>> {
+  if (workOrderIds.length === 0) return {}
+  const { data, error } = await supabase
+    .from('work_order_totals')
+    .select('work_order_id, variance')
+    .in('work_order_id', workOrderIds)
+  if (error) throw new Error(error.message)
+  const out: Record<string, number> = {}
+  for (const row of data ?? []) out[row.work_order_id] = Number(row.variance)
+  return out
+}
