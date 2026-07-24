@@ -1330,6 +1330,14 @@ Substituir `setStatus` em `src/app/(app)/orcamentos/actions.ts` (linhas 90–103
 ```ts
 export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'aprovado' | 'recusado') {
   const { supabase } = await getProfile()
+
+  // Estado anterior guardado para desfazer se a RPC da OS falhar: as duas
+  // escritas não estão numa transação, e um orçamento aprovado sem OS sumiria
+  // do quadro de produção, que lê work_orders.
+  const { data: before, error: readError } = await supabase
+    .from('quotes').select('status, updated_at').eq('id', id).single()
+  if (readError) throw new Error(readError.message)
+
   const { error } = await supabase.from('quotes')
     .update({ status, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw new Error(error.message)
@@ -1338,7 +1346,11 @@ export async function setStatus(id: string, status: 'rascunho' | 'enviado' | 'ap
   // custos já lançados. A RPC é idempotente: reaprovar devolve a mesma OS.
   const rpc = status === 'aprovado' ? 'create_work_order' : 'cancel_work_order'
   const { error: woError } = await supabase.rpc(rpc, { p_quote_id: id })
-  if (woError) throw new Error(woError.message)
+  if (woError) {
+    await supabase.from('quotes')
+      .update({ status: before.status, updated_at: before.updated_at }).eq('id', id)
+    throw new Error(woError.message)
+  }
 
   revalidatePath('/')
   revalidatePath(`/orcamentos/${id}`)
