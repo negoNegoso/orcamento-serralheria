@@ -91,6 +91,9 @@ export function ProductForm({
             categories={categories}
             costs={costs}
             unit={mode === 'fixo' ? 'R$' : 'R$/m²'}
+            salePrice={mode === 'fixo'
+              ? (product.base_price != null ? Number(product.base_price) : null)
+              : (product.price_per_m2 != null ? Number(product.price_per_m2) : null)}
             idPrefix={`p-${product.id}`}
           />
           <SubmitButton size="sm" variant="outline">Salvar custo esperado</SubmitButton>

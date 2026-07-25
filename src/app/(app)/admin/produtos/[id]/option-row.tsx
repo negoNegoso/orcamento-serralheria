@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Switch } from '@/components/ui/switch'
 import type { OptionRow, PriceCategory } from '@/lib/config-types'
+import { parseDecimal } from '@/lib/format'
 import { categoriaEfetiva, categoryName } from '@/lib/pricing/price-category'
 import type { PriceCost } from '@/lib/work-order/types'
 import { savePriceCosts } from '@/app/(app)/admin/produtos/actions'
@@ -225,6 +226,7 @@ export function OptionRowItem({
             categories={categories}
             costs={costs}
             unit={type === 'por_m2' ? 'R$/m²' : 'R$'}
+            salePrice={parseDecimal(value)}
             idPrefix={`o-${option.id}`}
           />
           <SubmitButton size="sm" variant="outline">Salvar custo esperado</SubmitButton>

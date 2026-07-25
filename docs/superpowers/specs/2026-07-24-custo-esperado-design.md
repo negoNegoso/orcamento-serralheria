@@ -182,7 +182,10 @@ mesma decomposição, sem gravar. Retorna `{ predictedMargin, uncostedCount }`.
 **Produto** — `src/app/(app)/admin/produtos/product-form.tsx`: abaixo dos campos de preço,
 bloco "Custo esperado" com 3 inputs (Custo interno / Insumo / Repasse), rótulo `R$` ou
 `R$/m²` conforme `pricing_mode`. Auto-save no padrão atual. `manual` não mostra o bloco.
-Ao lado do preço, quando há componentes: `custo 180 · margem 420 (70%)` em texto suave.
+Rodapé do bloco, quando há componentes: `Custo total R$ 240,00/m² · sobra R$ 240,00/m² (50%)`,
+somado ao vivo conforme se digita. A sobra sai em verde, ou vermelha quando o custo passa da
+venda — vender no prejuízo é o caso que precisa saltar aos olhos. Venda e custo estão sempre
+na mesma unidade (R$ com R$, R$/m² com R$/m²), então a conta fecha sem depender da área.
 
 **Opção** — `src/app/(app)/admin/produtos/[id]/option-row.tsx`: sub-bloco expansível
 ("Custo esperado ▸") com os 3 inputs, unidade conforme `surcharge_type`. Expansível porque
