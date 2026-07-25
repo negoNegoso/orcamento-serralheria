@@ -1,6 +1,6 @@
 import { round2 } from '@/lib/pricing/calc'
 import type { PriceCategory } from '@/lib/config-types'
-import type { CategoryTotals } from './types'
+import type { CategoryTotals, CostSource, PlannedKind } from './types'
 
 /** Positivo = estourou o planejado. Negativo = gastou menos. */
 export function variance(planned: number, actual: number): number {
@@ -24,6 +24,24 @@ export function margin(quoteTotal: number, actualTotal: number): number {
  */
 export function predictedMargin(quoteTotal: number, plannedTotal: number): number {
   return round2(quoteTotal - plannedTotal)
+}
+
+/**
+ * Cobertura de custo de uma OS: quantas linhas do orçamento ainda não têm custo
+ * cadastrado. Só linhas 'venda' contam — 'estrutural' (modelo, ajuste,
+ * arredondamento) não tem preço cadastrável, e 'custo' já está coberta.
+ */
+export function costCoverage(
+  lines: { planned_kind: PlannedKind; source: CostSource }[],
+): { uncosted: number; costed: number } {
+  let uncosted = 0
+  let costed = 0
+  for (const l of lines) {
+    if (l.source !== 'orcamento') continue
+    if (l.planned_kind === 'venda') uncosted++
+    if (l.planned_kind === 'custo') costed++
+  }
+  return { uncosted, costed }
 }
 
 type CostSlice = { price_category_id: string | null; planned_value: number; actual_value: number }

@@ -47,7 +47,7 @@ export function CostTable({ costs, editable, quoteId }: {
                           sem custo cadastrado
                         </span>
                       )}
-                      {c.planned_value === 0 && (
+                      {c.planned_kind !== 'venda' && c.planned_value === 0 && (
                         <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                           não previsto
                         </span>

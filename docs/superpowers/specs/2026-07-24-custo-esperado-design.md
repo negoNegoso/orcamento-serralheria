@@ -194,6 +194,43 @@ Margem prevista.
 
 **Orçamento** — blocos descritos na seção anterior. Vendedor não vê nenhum dos dois.
 
+### Como a Margem prevista é exibida
+
+O desconto do orçamento não vira linha planejada: ele existe só no `quotes.total`. Então numa
+OS onde nenhum preço tem custo cadastrado — toda linha `'venda'`, planejado = venda —
+`predicted_margin` dá exatamente `−desconto`. A conta está certa (se cada serviço custasse o
+que você cobra por ele, o desconto sai do seu bolso), mas o número sozinho alarma sem
+informar. A exibição resolve isso em três estados, calculados por `costCoverage()`:
+
+| cobertura | exibição |
+|---|---|
+| nenhuma linha com custo | `—` e a frase "Cadastre o custo esperado dos serviços para ver a margem." |
+| parcial | valor em cor neutra + "N sem custo" abaixo |
+| completa | valor colorido (verde/vermelho pelo sinal) |
+
+`costCoverage` só conta linhas `source='orcamento'`: custo lançado na produção não é preço
+de catálogo, e `'estrutural'` não tem onde cadastrar. Vale nos dois lugares — cabeçalho da
+tela da OS e bloco da OS no orçamento.
+
+### `manual` sem custo, garantido no código
+
+A decisão "produto `manual` não tem custo de catálogo" era só visual (o formulário escondia o
+bloco). Um produto que teve custo cadastrado enquanto era `fixo` e depois virou `manual`
+continuava planejando contra o catálogo, com o vendedor digitando o preço à mão. Agora é
+regra nas duas implementações: `decomposeItem` zera `baseCosts` quando `pricingMode ===
+'manual'`, e `work_order_clone_costs` (migration `0037`) exige
+`coalesce(pricing_mode,'') <> 'manual'` antes de procurar componentes. As linhas de
+`price_costs` ficam inertes em vez de serem apagadas — voltar para `fixo` recupera o cadastro.
+
+### Backfill das linhas estruturais (0037)
+
+Linhas criadas antes desta entrega nasceram com o default `'venda'`, inclusive modelo,
+"Ajuste do item" e arredondamento — que ganhariam o aviso "sem custo cadastrado" sem ter onde
+cadastrar custo. A `0037` reclassifica essas três descrições para `'estrutural'` uma única
+vez, desabilitando `woc_frozen_guard` em volta do update (o guard congela `planned_kind`).
+Comparar descrição é aceitável numa migração pontual; foi justamente o que se tirou do código
+que roda sempre.
+
 ## Server actions
 
 `savePriceCosts` (produto) e `saveOptionCosts` (opção) em

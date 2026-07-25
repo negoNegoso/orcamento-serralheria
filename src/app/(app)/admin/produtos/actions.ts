@@ -85,6 +85,7 @@ export async function savePriceCosts(fd: FormData): Promise<void> {
       continue
     }
     const value = parseDecimal(text)
+    if (!Number.isFinite(value)) throw new Error('Custo inválido')
     if (value < 0) throw new Error('Custo não pode ser negativo')
     upserts.push({ categoryId, value })
   }

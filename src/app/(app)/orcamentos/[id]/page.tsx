@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { ReceiptsSection } from '@/components/receipt/receipts-section'
 import { OrderSummary } from '@/components/work-order/order-summary'
-import { fetchWorkOrder, fetchWorkOrderTotals, fetchPriceCosts } from '@/lib/work-order/queries'
+import { fetchWorkOrder, fetchWorkOrderCosts, fetchWorkOrderTotals, fetchPriceCosts } from '@/lib/work-order/queries'
 import { buildPreviewInputs } from '@/lib/work-order/quote-preview'
 import { previewMargin } from '@/lib/work-order/preview-margin'
+import { costCoverage } from '@/lib/work-order/variance'
 import { MarginPreview } from '@/components/work-order/margin-preview'
 import { setStatus, cloneQuote } from '../actions'
 import type { ItemSelection } from '@/lib/pricing/snapshot'
@@ -34,6 +35,8 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
   const isAdmin = profile.role !== 'vendedor'
   const workOrder = isAdmin ? await fetchWorkOrder(supabase, id) : null
   const woTotals = workOrder ? await fetchWorkOrderTotals(supabase, workOrder.id) : null
+  const woCosts = workOrder ? await fetchWorkOrderCosts(supabase, workOrder.id) : null
+  const woCoverage = woCosts ? costCoverage(woCosts) : null
 
   // Prévia só faz sentido antes de aprovar: depois, o número real é o da OS.
   const showPreview = isAdmin && quote.status !== 'aprovado'
@@ -132,12 +135,13 @@ export default async function OrcamentoDetalhe({ params }: { params: Promise<{ i
         />
       )}
       {preview && <MarginPreview preview={preview} quoteTotal={Number(quote.total)} />}
-      {workOrder && woTotals && (
+      {workOrder && woTotals && woCoverage && (
         <OrderSummary
           quoteId={id}
           workOrder={workOrder}
           totals={woTotals}
           quoteUpdatedAt={quote.updated_at}
+          coverage={woCoverage}
         />
       )}
       <QuoteEditor products={products} quote={existing} />

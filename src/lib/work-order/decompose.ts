@@ -117,11 +117,15 @@ export function decomposeItem(
   }
 
   const porM2 = input.pricingMode === 'm2' || input.pricingMode === 'm2_direto'
+  // 'manual' não tem preço tabelado, então também não tem custo de catálogo
+  // (spec). Linhas antigas de price_costs de quando o produto era fixo/m²
+  // ficam inertes em vez de planejar contra um valor digitado à mão.
+  const baseCosts = input.pricingMode === 'manual' ? [] : input.baseCosts
   pushPrice(
     'Preço base',
     round2(input.unitBasePrice * input.qty * multiplier),
     input.productCategoryId,
-    input.baseCosts,
+    baseCosts,
     porM2 ? (input.areaM2 ?? 0) : 1,
   )
 

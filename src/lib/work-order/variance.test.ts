@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { margin, predictedMargin, rollupByCategory, variance, variancePercent } from './variance'
+import { costCoverage, margin, predictedMargin, rollupByCategory, variance, variancePercent } from './variance'
 import type { PriceCategory } from '@/lib/config-types'
+import type { CostSource, PlannedKind } from './types'
 
 const CATS: PriceCategory[] = [
   { id: 'c1', slug: 'custo', name: 'Custo', sort_order: 0 },
@@ -71,5 +72,25 @@ describe('predictedMargin', () => {
   })
   it('sem custo cadastrado (planejado = venda) a margem prevista é zero', () => {
     expect(predictedMargin(2934.90, 2934.90)).toBe(0)
+  })
+})
+
+describe('costCoverage', () => {
+  const line = (planned_kind: PlannedKind, source: CostSource = 'orcamento') => ({ planned_kind, source })
+
+  it('conta linhas de venda como pendentes e de custo como cobertas', () => {
+    expect(costCoverage([line('custo'), line('custo'), line('venda')]))
+      .toEqual({ uncosted: 1, costed: 2 })
+  })
+  it('linha estrutural não conta nos dois lados', () => {
+    expect(costCoverage([line('estrutural'), line('estrutural')]))
+      .toEqual({ uncosted: 0, costed: 0 })
+  })
+  it('custo lançado na produção não conta (não é preço do catálogo)', () => {
+    expect(costCoverage([line('venda', 'manual'), line('venda', 'terceiro')]))
+      .toEqual({ uncosted: 0, costed: 0 })
+  })
+  it('lista vazia', () => {
+    expect(costCoverage([])).toEqual({ uncosted: 0, costed: 0 })
   })
 })

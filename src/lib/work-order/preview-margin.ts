@@ -1,5 +1,6 @@
 import { round2 } from '@/lib/pricing/calc'
 import { decomposeItem, type DecomposeInput } from './decompose'
+import { predictedMargin } from './variance'
 
 export interface MarginPreview {
   /** total do orçamento menos o custo esperado */
@@ -35,5 +36,5 @@ export function previewMargin(
     }
   }
 
-  return { predictedMargin: round2(quoteTotal - plannedTotal), plannedTotal, uncostedCount }
+  return { predictedMargin: predictedMargin(quoteTotal, plannedTotal), plannedTotal, uncostedCount }
 }

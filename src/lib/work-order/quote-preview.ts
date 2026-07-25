@@ -39,7 +39,7 @@ function sortByCategoryRank(
   return [...costs].sort((a, b) => {
     const ra = rankByCategory.get(a.priceCategoryId) ?? Infinity
     const rb = rankByCategory.get(b.priceCategoryId) ?? Infinity
-    return ra - rb
+    return ra - rb || a.priceCategoryId.localeCompare(b.priceCategoryId)
   })
 }
 
@@ -83,7 +83,10 @@ export function buildPreviewInputs(
       productCategoryId: product?.price_category_id ?? null,
       optionCategoryIds,
       pricingMode: product?.pricing_mode ?? 'fixo',
-      baseCosts: it.product_type_id
+      // custo só entra quando o produto foi resolvido do catálogo: sem ele não
+      // há pricing_mode confiável, e aplicar o custo com fator 1 num produto
+      // por m² inflaria a margem prevista.
+      baseCosts: product
         ? sortByCategoryRank(
             componentsOf(priceCosts.filter(c => c.product_type_id === it.product_type_id)),
             rankByCategory,

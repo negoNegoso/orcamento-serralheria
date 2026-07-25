@@ -276,4 +276,13 @@ describe('decomposeItem com custo esperado', () => {
     expect(lines[0].description).toBe('Preço base — Sem categoria')
     expect(lines[0].priceCategoryId).toBe('cat-fantasma')
   })
+
+  it('produto manual ignora custo de catálogo e cai na venda', () => {
+    const lines = decomposeItem(input({
+      pricingMode: 'manual', unitBasePrice: 600, lineTotal: 600,
+      baseCosts: [{ priceCategoryId: 'cat-insumo', value: 180 }],
+    }), 1)
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toMatchObject({ description: 'Preço base', plannedValue: 600, plannedKind: 'venda' })
+  })
 })

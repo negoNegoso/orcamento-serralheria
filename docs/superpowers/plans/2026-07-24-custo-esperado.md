@@ -1534,3 +1534,21 @@ git commit -m "feat: prévia de margem no orçamento antes de aprovar"
 - [ ] Conformidade SQL×TS verificada com um orçamento de fixture cobrindo: preço com custo cheio, preço com custo parcial, preço sem custo, produto por m², opção `por_m2` com custo, item com modelo (resíduo) e `extra_value` — comparando o resultado da RPC contra `decomposeItem`
 - [ ] Verificação de acesso: com um usuário `vendedor`, confirmar que `select * from price_costs` volta vazio e que o bloco de prévia não aparece na página do orçamento
 - [ ] Verificação de comportamento: cadastrar custo num serviço da Garagem do Maninho, aprovar um orçamento novo e confirmar que a OS nasce com Margem prevista > 0 e Real = custo esperado
+
+---
+
+## Fix wave pós-revisão final
+
+Achados da revisão de branch inteira, aplicados depois das 10 tarefas. Migration nova
+`supabase/migrations/0037_manual_sem_custo.sql` (função recriada + backfill).
+
+| # | achado | correção |
+|---|---|---|
+| A | **Critical** — "Margem prevista" mostrava `−desconto` em vermelho numa OS sem custo cadastrado (o desconto não vira linha planejada) | `costCoverage()` em `variance.ts` + exibição em três estados (esconde / neutra com contagem / colorida) na tela da OS e no `OrderSummary` |
+| B | **Important** — prévia superestimava margem ~5× em produto m² desativado: `baseCosts` vinha do id cru, `pricingMode` caía em `'fixo'` | `baseCosts` passa a exigir o produto resolvido do catálogo |
+| C | **Important** — `manual` aplicava custo de catálogo contra o spec | `decomposeItem` zera `baseCosts` em `manual`; `0037` exige `pricing_mode <> 'manual'` |
+| D | **Important** — toda linha de OS antiga ganhava badge "sem custo", inclusive estruturais | backfill em `0037` reclassifica modelo/ajuste/arredondamento para `'estrutural'` (com o guard desabilitado em volta) |
+| E | **Important** — `predictedMargin()` era código morto | `preview-margin.ts` passa a usá-la em vez de inlinar a conta |
+| F | **Minor** — badges duplicados; `parseDecimal` de texto inválido virava `NaN` e batia no not-null; `order by cat.sort_order` sem desempate | badges mutuamente exclusivos; `Number.isFinite` em `savePriceCosts`; `, cat.id` no SQL e desempate por id em `sortByCategoryRank` |
+
+Testes novos: `costCoverage` (4 casos) e `decomposeItem` com `manual`. Suíte 273/273.
