@@ -4,7 +4,7 @@ import { getProfile } from '@/lib/auth'
 import { formatBRL } from '@/lib/format'
 import { STAGE_LABELS } from '@/lib/production/stages'
 import { canEditCosts, WO_STATUS_LABELS } from '@/lib/work-order/status'
-import { rollupByCategory } from '@/lib/work-order/variance'
+import { costCoverage, rollupByCategory } from '@/lib/work-order/variance'
 import { fetchWorkOrder, fetchWorkOrderCosts, fetchWorkOrderTotals } from '@/lib/work-order/queries'
 import { AddCostModal } from '@/components/work-order/add-cost-modal'
 import { CategorySummary } from '@/components/work-order/category-summary'
@@ -30,6 +30,7 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
 
   const rows = rollupByCategory(costs, (categories ?? []) as PriceCategory[])
   const editable = canEditCosts(workOrder.status)
+  const coverage = costCoverage(costs)
 
   return (
     <div className="space-y-4">
@@ -49,14 +50,29 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
         </Link>
       </div>
 
-      <section className="grid grid-cols-2 gap-2 rounded-xl border p-4 text-sm sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 rounded-xl border p-4 text-sm sm:grid-cols-5">
         <div>
           <span className="text-muted-foreground">Total do orçamento</span>
           <p className="font-bold">{formatBRL(totals.quote_total)}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Planejado</span>
+          <span className="text-muted-foreground">Custo esperado</span>
           <p className="font-bold">{formatBRL(totals.planned_total)}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Margem prevista</span>
+          {coverage.costed === 0 ? (
+            <p className="font-bold text-muted-foreground">—</p>
+          ) : coverage.uncosted > 0 ? (
+            <p className="font-bold">
+              {formatBRL(totals.predicted_margin)}
+              <span className="block text-xs text-muted-foreground">{coverage.uncosted} sem custo</span>
+            </p>
+          ) : (
+            <p className={`font-bold ${totals.predicted_margin < 0 ? 'text-red-600' : 'text-green-700'}`}>
+              {formatBRL(totals.predicted_margin)}
+            </p>
+          )}
         </div>
         <div>
           <span className="text-muted-foreground">Custo real</span>
@@ -69,6 +85,11 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
           </p>
         </div>
       </section>
+      {coverage.costed === 0 && (
+        <p className="text-sm text-muted-foreground">
+          Cadastre o custo esperado dos serviços para ver a margem.
+        </p>
+      )}
 
       <CategorySummary rows={rows} />
       <div className="flex items-center gap-3">

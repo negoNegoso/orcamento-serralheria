@@ -5,11 +5,12 @@ import { WO_STATUS_LABELS } from '@/lib/work-order/status'
 import { variancePercent } from '@/lib/work-order/variance'
 import type { WorkOrder, WorkOrderTotals } from '@/lib/work-order/types'
 
-export function OrderSummary({ quoteId, workOrder, totals, quoteUpdatedAt }: {
+export function OrderSummary({ quoteId, workOrder, totals, quoteUpdatedAt, coverage }: {
   quoteId: string
   workOrder: WorkOrder
   totals: WorkOrderTotals
   quoteUpdatedAt: string
+  coverage: { uncosted: number; costed: number }
 }) {
   const pct = variancePercent(totals.planned_total, totals.actual_total)
   const estourou = totals.variance > 0
@@ -38,10 +39,25 @@ export function OrderSummary({ quoteId, workOrder, totals, quoteUpdatedAt }: {
         </p>
       )}
 
-      <div className="grid grid-cols-3 gap-2 text-sm">
+      <div className="grid grid-cols-4 gap-2 text-sm">
         <div>
-          <span className="text-muted-foreground">Planejado</span>
+          <span className="text-muted-foreground">Custo esperado</span>
           <p className="font-bold">{formatBRL(totals.planned_total)}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Margem prevista</span>
+          {coverage.costed === 0 ? (
+            <p className="font-bold text-muted-foreground">—</p>
+          ) : coverage.uncosted > 0 ? (
+            <p className="font-bold">
+              {formatBRL(totals.predicted_margin)}
+              <span className="block text-xs text-muted-foreground">{coverage.uncosted} sem custo</span>
+            </p>
+          ) : (
+            <p className={`font-bold ${totals.predicted_margin < 0 ? 'text-red-600' : 'text-green-700'}`}>
+              {formatBRL(totals.predicted_margin)}
+            </p>
+          )}
         </div>
         <div>
           <span className="text-muted-foreground">Real</span>

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import type { OptionGroupRow, PriceCategory } from '@/lib/config-types'
 import { categoryName } from '@/lib/pricing/price-category'
+import type { PriceCost } from '@/lib/work-order/types'
 import { reorderOptions } from './actions'
 import { NewOptionRow, OptionRowItem } from './option-row'
 
@@ -23,6 +24,7 @@ export function GroupCard({
   productId,
   group,
   categories,
+  priceCosts,
   dragHandle,
   onEdit,
   onDelete,
@@ -30,6 +32,7 @@ export function GroupCard({
   productId: string
   group: OptionGroupRow
   categories: PriceCategory[]
+  priceCosts: PriceCost[]
   dragHandle?: React.ReactNode
   onEdit: () => void
   onDelete: () => void
@@ -103,6 +106,7 @@ export function GroupCard({
                   option={option}
                   categories={categories}
                   groupCategoryId={group.price_category_id}
+                  costs={priceCosts.filter(c => c.option_id === option.id)}
                   onError={setError}
                 />
               )

@@ -3,11 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { CostFields } from '@/components/admin/cost-fields'
 import { Icon } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { Switch } from '@/components/ui/switch'
 import type { OptionRow, PriceCategory } from '@/lib/config-types'
 import { categoriaEfetiva, categoryName } from '@/lib/pricing/price-category'
+import type { PriceCost } from '@/lib/work-order/types'
+import { savePriceCosts } from '@/app/(app)/admin/produtos/actions'
 import { deleteOption, saveOption } from './actions'
 
 const selectClass =
@@ -43,6 +47,7 @@ export function OptionRowItem({
   option,
   categories,
   groupCategoryId,
+  costs,
   onError,
 }: {
   productId: string
@@ -50,6 +55,7 @@ export function OptionRowItem({
   option: OptionRow
   categories: PriceCategory[]
   groupCategoryId: string | null
+  costs: PriceCost[]
   onError: (msg: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: option.id })
@@ -134,7 +140,7 @@ export function OptionRowItem({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`group/row flex items-center gap-2 ${isDragging ? 'z-10 opacity-70' : ''} ${active ? '' : 'opacity-50'}`}
+      className={`group/row flex flex-wrap items-center gap-2 ${isDragging ? 'z-10 opacity-70' : ''} ${active ? '' : 'opacity-50'}`}
     >
       <button
         type="button"
@@ -208,6 +214,22 @@ export function OptionRowItem({
       >
         <Icon name="close" className="text-lg" />
       </button>
+      <details className="mt-1 w-full">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          Custo esperado{costs.length > 0 ? ` (${costs.length})` : ''}
+        </summary>
+        <form action={savePriceCosts} className="mt-2 space-y-2">
+          <input type="hidden" name="option_id" value={option.id} />
+          <input type="hidden" name="product_id" value={productId} />
+          <CostFields
+            categories={categories}
+            costs={costs}
+            unit={type === 'por_m2' ? 'R$/m²' : 'R$'}
+            idPrefix={`o-${option.id}`}
+          />
+          <SubmitButton size="sm" variant="outline">Salvar custo esperado</SubmitButton>
+        </form>
+      </details>
     </li>
   )
 }

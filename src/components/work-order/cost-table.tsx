@@ -30,7 +30,7 @@ export function CostTable({ costs, editable, quoteId }: {
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="py-1 font-medium">Descrição</th>
-                  <th className="py-1 text-right font-medium">Planejado</th>
+                  <th className="py-1 text-right font-medium">Custo esperado</th>
                   {editable && <th className="py-1 text-right font-medium">Qtd × Valor un.</th>}
                   <th className="py-1 text-right font-medium">Real</th>
                   {editable && <th className="py-1 font-medium"></th>}
@@ -42,7 +42,12 @@ export function CostTable({ costs, editable, quoteId }: {
                     <td className="py-1">
                       {c.description}
                       {c.supplier && <span className="ml-2 text-muted-foreground">({c.supplier})</span>}
-                      {c.planned_value === 0 && (
+                      {c.source === 'orcamento' && c.planned_kind === 'venda' && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                          sem custo cadastrado
+                        </span>
+                      )}
+                      {c.planned_kind !== 'venda' && c.planned_value === 0 && (
                         <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                           não previsto
                         </span>

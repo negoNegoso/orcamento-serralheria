@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { WorkOrder, WorkOrderCost, WorkOrderTotals } from './types'
+import type { PriceCost, WorkOrder, WorkOrderCost, WorkOrderTotals } from './types'
 
 const WO_COLUMNS =
   'id, quote_id, number, status, production_stage, archived_at, quote_total, quote_snapshot_at, closed_at'
@@ -39,7 +39,7 @@ export async function fetchWorkOrderTotals(
 ): Promise<WorkOrderTotals | null> {
   const { data, error } = await supabase
     .from('work_order_totals')
-    .select('quote_total, planned_total, actual_total, variance, margin')
+    .select('quote_total, planned_total, actual_total, variance, margin, predicted_margin')
     .eq('work_order_id', workOrderId)
     .maybeSingle()
   if (error) throw new Error(error.message)
@@ -50,6 +50,7 @@ export async function fetchWorkOrderTotals(
     actual_total: Number(data.actual_total),
     variance: Number(data.variance),
     margin: Number(data.margin),
+    predicted_margin: Number(data.predicted_margin),
   }
 }
 
@@ -67,4 +68,17 @@ export async function fetchBoardVariances(
   const out: Record<string, number> = {}
   for (const row of data ?? []) out[row.work_order_id] = Number(row.variance)
   return out
+}
+
+/**
+ * Todos os custos esperados da empresa. A RLS de price_costs é admin-only, então
+ * para vendedor isto volta vazio — mas quem chama já deve ter feito o gate.
+ */
+export async function fetchPriceCosts(supabase: SupabaseClient): Promise<PriceCost[]> {
+  const { data, error } = await supabase
+    .from('price_costs')
+    .select('id, product_type_id, option_id, price_category_id, value')
+  if (error) throw new Error(error.message)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((c: any) => ({ ...c, value: Number(c.value) })) as PriceCost[]
 }
