@@ -7,9 +7,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizeAreaName } from '@/lib/business-area'
 
 async function requireAdminSystem() {
-  const { profile } = await getProfile()
+  const { profile, supabase } = await getProfile()
   if (profile.role !== 'admin_system') throw new Error('Apenas admin_system')
-  return profile
+  return { profile, supabase }
 }
 
 export type CreateCompanyState = { error?: string }
@@ -85,17 +85,18 @@ export async function updateCompany(fd: FormData) {
 }
 
 export async function setCompanyStatus(fd: FormData) {
-  await requireAdminSystem()
+  // Cliente do usuário, não o admin: o trigger companies_protect_status exige
+  // is_admin_system(), que depende de auth.uid() — nulo na service role.
+  const { supabase } = await requireAdminSystem()
   const id = String(fd.get('id'))
   const status = String(fd.get('status')) === 'suspensa' ? 'suspensa' : 'ativa'
-  const admin = createAdminClient()
-  const { error } = await admin.from('companies').update({ status }).eq('id', id)
+  const { error } = await supabase.from('companies').update({ status }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/sistema/empresas')
 }
 
 export async function enterSupport(fd: FormData) {
-  const profile = await requireAdminSystem()
+  const { profile } = await requireAdminSystem()
   const companyId = String(fd.get('company_id'))
   const admin = createAdminClient()
   const { data: company } = await admin.from('companies').select('id').eq('id', companyId).single()
